@@ -1,0 +1,50 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract SourceCore",
+        "name": "core",
+        "type": "address"
+      }
+    ],
+    "name": "getAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "pullAssets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pushAssets",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract SourceCore",
+        "name": "core",
+        "type": "address"
+      }
+    ],
+    "name": "getNonces",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "inboundNonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "outboundNonce",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

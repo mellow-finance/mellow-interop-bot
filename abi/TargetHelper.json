@@ -1,0 +1,45 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract TargetCore",
+        "name": "core",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "redeemDemandAssets",
+        "type": "uint256"
+      }
+    ],
+    "name": "getAmounts",
+    "outputs": [
+      { "internalType": "uint256", "name": "pushAssets", "type": "uint256" },
+      { "internalType": "bytes", "name": "claimData", "type": "bytes" },
+      { "internalType": "uint256", "name": "redeemShares", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "depositableAssets",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract TargetCore",
+        "name": "core",
+        "type": "address"
+      }
+    ],
+    "name": "getNonces",
+    "outputs": [
+      { "internalType": "uint256", "name": "inboundNonce", "type": "uint256" },
+      { "internalType": "uint256", "name": "outboundNonce", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
