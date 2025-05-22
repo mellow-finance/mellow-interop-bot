@@ -45,11 +45,10 @@ def collect(source_core_address: str, target_core_address: str) -> None:
 
     print('Required actions for SourceCore({}) deployment:'.format(source_core_address))
     if source_amounts[1] > 0:
-        print('SourceCore({})::pushToTarget{{value: {}}}({});'.format(
+        print('SourceCore({})::pushToTarget{{value: {}}}();'.format(
             source_core_address,
             source_helper.functions.quotePushToTarget(
-                source_core_address).call() * 12 // 10,  # +20% gap
-            source_amounts[1]
+                source_core_address).call() * 12 // 10  # +20% gap
         ))
     if target_amounts[2] > 0:
         print('TargetCore({})::redeem({});'.format(
