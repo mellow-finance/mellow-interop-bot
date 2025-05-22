@@ -47,7 +47,8 @@ def collect(source_core_address: str, target_core_address: str) -> None:
     if source_amounts[1] > 0:
         print('SourceCore({})::pushToTarget{{value: {}}}({});'.format(
             source_core_address,
-            PUSH_TO_GAS * TARGET_W3.eth.gas_price,
+            source_helper.functions.quotePushToTarget(
+                source_core_address).call() * 12 // 10,  # +20% gap
             source_amounts[1]
         ))
     if target_amounts[2] > 0:
@@ -59,7 +60,8 @@ def collect(source_core_address: str, target_core_address: str) -> None:
     if target_amounts[0] > 0:
         print('TargetCore({})::pushToSource{{value: {}}}({});'.format(
             target_core_address,
-            PUSH_TO_GAS * SOURCE_W3.eth.gas_price,
+            target_helper.functions.quotePushToSource(
+                target_core_address).call() * 12 // 10, # +20% gap
             target_amounts[0]
         ))
     if target_amounts[3] > 0:
