@@ -45,11 +45,15 @@ def collect(source_core_address: str, target_core_address: str) -> None:
 
     print('Required actions for SourceCore({}) deployment:'.format(source_core_address))
     if source_amounts[1] > 0:
+        print('Available to push to the target chain:',
+              source_amounts[1])
         print('SourceCore({})::pushToTarget{{value: {}}}();'.format(
             source_core_address,
             source_helper.functions.quotePushToTarget(
                 source_core_address).call() * 12 // 10  # +20% gap
         ))
+    elif source_amounts[0] > 0:
+        print('Required to pull from the target chain:', source_amounts[0])
     if target_amounts[2] > 0:
         print('TargetCore({})::redeem({});'.format(
             target_core_address, target_amounts[2]))
