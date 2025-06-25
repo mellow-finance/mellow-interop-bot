@@ -108,11 +108,6 @@ def run(
             "Withdrawal demand is greater or equal to total assets. Invalid state."
         )
 
-    """
-
-    
-    """
-
     current_ratio_d3 = int(
         1000
         * (source_value - withdrawal_demand)
