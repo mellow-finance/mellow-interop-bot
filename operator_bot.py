@@ -183,7 +183,7 @@ def run(
         )
 
     data = target_helper.getAmounts(target_core_address, 0).call()
-    
+
     if data[1]:
         print(wrap_text("TargetCore.claim({})".format(data[1].hex())))
         execute(target_core.claim(data[1].hex()), 0, operator_pk)
