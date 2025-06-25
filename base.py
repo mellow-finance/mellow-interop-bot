@@ -6,10 +6,12 @@ from web3.middleware import geth_poa_middleware
 
 BLOCK_GAP = 10000
 
+
 def get_w3(rpc: str) -> Web3:
     w3 = Web3(Web3.HTTPProvider(rpc))
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
     return w3
+
 
 def get_contract(w3: Web3, address: str, name: str) -> Contract:
     with open("./abi/{}.json".format(name), "r") as f:
@@ -70,7 +72,11 @@ def execute(contractFunction: ContractFunction, value: int, operator_pk: str):
     tx = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
     print("Transaction sent: {}".format(tx.hex()))
     receipt = w3.eth.waitForTransactionReceipt(tx)
-    print("Transaction mined in block: {}. Chain id: {}".format(receipt.blockNumber, w3.eth.chain_id))
+    print(
+        "Transaction mined in block: {}. Chain id: {}".format(
+            receipt.blockNumber, w3.eth.chain_id
+        )
+    )
 
 
 def block_before_timestamp(w3: Web3, timestamp: int) -> int:
