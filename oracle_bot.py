@@ -24,7 +24,7 @@ def run_oracle_validation(
 
     source_core = get_contract(source_w3, source_core_address, "SourceCore").functions
     timestamp = source_w3.eth.get_block("latest").timestamp
-    secure_timestamp = timestamp - 60
+    secure_timestamp = timestamp - SECURE_INTERVAL
     source_block = block_before_timestamp(source_w3, secure_timestamp)
     target_block = block_before_timestamp(target_w3, secure_timestamp)
 
