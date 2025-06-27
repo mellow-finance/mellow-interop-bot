@@ -7,6 +7,16 @@ from web3.middleware import geth_poa_middleware
 BLOCK_GAP = 10000
 
 
+def print_colored(text: str, color="yellow") -> str:
+    if color == "red":
+        text = "\033[31m" + text + "\033[0m"
+    elif color == "green":
+        text = "\033[32m" + text + "\033[0m"
+    elif color == "yellow":
+        text = "\033[33m" + text + "\033[0m"
+    print(text)
+
+
 def get_w3(rpc: str) -> Web3:
     w3 = Web3(Web3.HTTPProvider(rpc))
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)

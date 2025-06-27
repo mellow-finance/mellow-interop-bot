@@ -1,8 +1,6 @@
 from base import *
-import time
 
 SECURE_INTERVAL = 30 * 60  # 30 minutes
-
 
 def run_oracle_validation(
     source_core_address: str,
@@ -36,10 +34,11 @@ def run_oracle_validation(
     )
     # requirement: source.inboundNonce == target.outboundNonce && source.outboundNonce == target.inboundNonce
     if source_nonces[0] != target_nonces[1] or source_nonces[1] != target_nonces[0]:
-        print(
+        print_colored(
             "OFT transfers in progress. source chain {} target chain {}".format(
                 source_nonces, target_nonces
-            )
+            ),
+            "yellow"
         )
         return False
 
@@ -62,14 +61,20 @@ def run_oracle_validation(
 
     remaining_time = oracle_timestamp + oracle_max_age - timestamp
     if remaining_time <= 24 * 3600 or oracle_value != secure_value:
-        print(
+        print_colored(
             "Oracle needs update: remaining time {}, oracle value {}, actual value {}".format(
                 remaining_time, oracle_value, secure_value
-            )
+            ),
+            "red"
         )
         return False
     else:
-        print("Oracle is up to date")
+        print_colored(
+            "Oracle is up to date. Remaining time: {} hours".format(
+                round(remaining_time / 3600, 1)
+            ),
+            "green"
+        )
         return True
 
 

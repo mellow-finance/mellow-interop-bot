@@ -26,17 +26,6 @@ def wait_for_layer_zero_finalization(
             break
 
 
-def wrap_text(text: str, color="yellow") -> str:
-    if color == "red":
-        return "\033[31m" + text + "\033[0m"
-    elif color == "green":
-        return "\033[32m" + text + "\033[0m"
-    elif color == "yellow":
-        return "\033[33m" + text + "\033[0m"
-    else:
-        return text
-
-
 def run(
     source_core_address: str,
     target_core_address: str,
@@ -56,7 +45,8 @@ def run(
         source_core_helper,
         target_core_helper,
     ):
-        raise Exception("Oracle validation failed")
+        print_colored("Oracle validation failed", "red")
+        return
 
     source_w3 = get_w3(source_rpc)
     target_w3 = get_w3(target_rpc)
@@ -82,11 +72,13 @@ def run(
     )
     # requirement: source.inboundNonce == target.outboundNonce && source.outboundNonce == target.inboundNonce
     if source_nonces[0] != target_nonces[1] or source_nonces[1] != target_nonces[0]:
-        raise Exception(
+        print_colored(
             "OFT transfers in progress. source chain {} target chain {}".format(
                 source_nonces, target_nonces
-            )
+            ),
+            "yellow",
         )
+        return
 
     source_value = source_helper.getSourceValue(source_core_address).call(
         block_identifier=source_block
@@ -104,9 +96,10 @@ def run(
     )
 
     if source_value + target_value <= withdrawal_demand:
-        raise Exception(
+        print_colored(
             "Withdrawal demand is greater or equal to total assets. Invalid state."
         )
+        return
 
     current_ratio_d3 = int(
         1000
@@ -134,17 +127,15 @@ def run(
         )
         data = target_helper.getAmounts(target_core_address, assets_deficit).call()
         if data[2] > 0:
-            print(wrap_text("TargetCore.redeem({})".format(data[2])))
+            print_colored("TargetCore.redeem({})".format(data[2]))
             execute(target_core.redeem(data[2]), 0, operator_pk)
         if data[1]:
-            print(wrap_text("TargetCore.claim({})".format(data[1].hex())))
+            print_colored("TargetCore.claim({})".format(data[1].hex()))
             execute(target_core.claim(data[1].hex()), 0, operator_pk)
         if data[0] > 0:
             value = target_helper.quotePushToSource(target_core_address).call()
-            print(
-                wrap_text(
-                    "TargetCore.pushToSource{{value:{}}}({})".format(value, data[0])
-                )
+            print_colored(
+                "TargetCore.pushToSource{{value:{}}}({})".format(value, data[0])
             )
             execute(
                 target_core.pushToSource(data[0]),
@@ -159,7 +150,7 @@ def run(
     elif current_ratio_d3 > max_source_ratio_d3:
         print("Assets surplus. Current ratio: {}%".format(current_ratio_d3 / 10))
         value = source_helper.quotePushToTarget(source_core_address).call()
-        print(wrap_text("SourceCore.pushToTarget{{value:{}}}()".format(value)))
+        print_colored("SourceCore.pushToTarget{{value:{}}}()".format(value))
         execute(
             source_core.pushToTarget(),
             value,
@@ -171,24 +162,22 @@ def run(
         )
         print("LayerZero finalization completed.")
     else:
-        print(
-            wrap_text(
-                "No crosschain action required. Current ratio: {}%. Target SourceCore ratio: {}%. Max SourceCore ratio: {}%.".format(
-                    current_ratio_d3 / 10,
-                    source_ratio_d3 / 10,
-                    max_source_ratio_d3 / 10,
-                ),
-                "green",
-            )
+        print_colored(
+            "No crosschain action required. Current ratio: {}%. Target SourceCore ratio: {}%. Max SourceCore ratio: {}%.".format(
+                current_ratio_d3 / 10,
+                source_ratio_d3 / 10,
+                max_source_ratio_d3 / 10,
+            ),
+            "green",
         )
 
     data = target_helper.getAmounts(target_core_address, 0).call()
 
     if data[1]:
-        print(wrap_text("TargetCore.claim({})".format(data[1].hex())))
+        print_colored("TargetCore.claim({})".format(data[1].hex()))
         execute(target_core.claim(data[1].hex()), 0, operator_pk)
     if data[3] >= LAYER_ZERO_DUST:
-        print(wrap_text("TargetCore.deposit({})".format(data[3])))
+        print_colored("TargetCore.deposit({})".format(data[3]))
         execute(target_core.deposit(data[3]), 0, operator_pk)
 
 
