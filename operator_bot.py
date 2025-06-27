@@ -207,8 +207,8 @@ if __name__ == "__main__":
     source_core_address = os.getenv("SOURCE_CORE_ADDRESS")
     target_core_address = os.getenv("TARGET_CORE_ADDRESS")
 
-    source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 1000))
-    max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 1200))
+    source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 50))
+    max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 100))
 
     run(
         source_core_address=source_core_address,
