@@ -5,6 +5,7 @@ from eth_account import Account
 from web3.middleware import geth_poa_middleware
 
 BLOCK_GAP = 10000
+SECURE_INTERVAL = 30 * 60  # 30 minutes
 
 
 def print_colored(text: str, color="yellow") -> str:
@@ -89,7 +90,7 @@ def execute(contractFunction: ContractFunction, value: int, operator_pk: str):
     )
 
 
-def block_before_timestamp(w3: Web3, timestamp: int) -> int:
+def get_block_before_timestamp(w3: Web3, timestamp: int) -> int:
     latest_block = w3.eth.get_block("latest")
     from_block = w3.eth.get_block(latest_block.number - BLOCK_GAP)
     timespan = latest_block.timestamp - from_block.timestamp

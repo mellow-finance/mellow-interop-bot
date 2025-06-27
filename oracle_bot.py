@@ -1,6 +1,5 @@
 from base import *
 
-SECURE_INTERVAL = 30 * 60  # 30 minutes
 
 def run_oracle_validation(
     source_core_address: str,
@@ -23,8 +22,8 @@ def run_oracle_validation(
     source_core = get_contract(source_w3, source_core_address, "SourceCore").functions
     timestamp = source_w3.eth.get_block("latest").timestamp
     secure_timestamp = timestamp - SECURE_INTERVAL
-    source_block = block_before_timestamp(source_w3, secure_timestamp)
-    target_block = block_before_timestamp(target_w3, secure_timestamp)
+    source_block = get_block_before_timestamp(source_w3, secure_timestamp)
+    target_block = get_block_before_timestamp(target_w3, secure_timestamp)
 
     source_nonces = source_helper.getNonces(source_core_address).call(
         block_identifier=source_block
@@ -38,7 +37,7 @@ def run_oracle_validation(
             "OFT transfers in progress. source chain {} target chain {}".format(
                 source_nonces, target_nonces
             ),
-            "yellow"
+            "yellow",
         )
         return False
 
@@ -65,7 +64,7 @@ def run_oracle_validation(
             "Oracle needs update: remaining time {}, oracle value {}, actual value {}".format(
                 remaining_time, oracle_value, secure_value
             ),
-            "red"
+            "red",
         )
         return False
     else:
@@ -73,7 +72,7 @@ def run_oracle_validation(
             "Oracle is up to date. Remaining time: {} hours".format(
                 round(remaining_time / 3600, 1)
             ),
-            "green"
+            "green",
         )
         return True
 
