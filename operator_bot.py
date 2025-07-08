@@ -6,8 +6,8 @@ LAYER_ZERO_DUST = 1000_000_000_000
 
 
 def wait_for_layer_zero_finalization(
-    source_helper: ContractFunctions,
-    target_helper: ContractFunctions,
+    source_helper,
+    target_helper,
     source_core_address: str,
     target_core_address: str,
 ) -> None:

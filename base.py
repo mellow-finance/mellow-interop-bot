@@ -1,6 +1,6 @@
 import json
 from web3 import Web3
-from web3.contract import Contract, ContractFunction, ContractFunctions
+from web3.contract import Contract
 from eth_account import Account
 from web3.middleware import geth_poa_middleware
 
@@ -30,7 +30,7 @@ def get_contract(w3: Web3, address: str, name: str) -> Contract:
         return w3.eth.contract(address=w3.to_checksum_address(address), abi=abi)
 
 
-def execute(contractFunction: ContractFunction, value: int, operator_pk: str):
+def execute(contractFunction, value: int, operator_pk: str):
     operator_address = Account.from_key(operator_pk).address
     w3 = contractFunction.web3
 

@@ -88,14 +88,21 @@ if __name__ == "__main__":
     source_core_helper = os.getenv("SOURCE_CORE_HELPER")
     target_core_helper = os.getenv("TARGET_CORE_HELPER")
 
-    source_core_address = os.getenv("SOURCE_CORE_ADDRESS")
-    target_core_address = os.getenv("TARGET_CORE_ADDRESS")
+    deployments = [
+        (
+            os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
+            os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
+        ),
+        (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
+        (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
+    ]
 
-    run_oracle_validation(
-        source_core_address=source_core_address,
-        target_core_address=target_core_address,
-        source_rpc=source_rpc,
-        target_rpc=target_rpc,
-        source_core_helper=source_core_helper,
-        target_core_helper=target_core_helper,
-    )
+    for source_core_address, target_core_address in deployments:
+        run_oracle_validation(
+            source_core_address=source_core_address,
+            target_core_address=target_core_address,
+            source_rpc=source_rpc,
+            target_rpc=target_rpc,
+            source_core_helper=source_core_helper,
+            target_core_helper=target_core_helper,
+        )

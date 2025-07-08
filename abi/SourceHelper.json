@@ -9,8 +9,16 @@
     ],
     "name": "getNonces",
     "outputs": [
-      { "internalType": "uint256", "name": "inboundNonce", "type": "uint256" },
-      { "internalType": "uint256", "name": "outboundNonce", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "inboundNonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "outboundNonce",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -24,7 +32,13 @@
       }
     ],
     "name": "getSourceValue",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -43,7 +57,11 @@
         "name": "withdrawalDemand",
         "type": "uint256"
       },
-      { "internalType": "uint256", "name": "totalSupply", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "totalSupply",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -57,7 +75,13 @@
       }
     ],
     "name": "quotePushToTarget",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   }
