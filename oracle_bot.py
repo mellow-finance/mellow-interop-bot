@@ -61,8 +61,8 @@ def run_oracle_validation(
     remaining_time = oracle_timestamp + oracle_max_age - timestamp
     if remaining_time <= 24 * 3600 or oracle_value != secure_value:
         print_colored(
-            "Oracle needs update: remaining time {}, oracle value {}, actual value {}".format(
-                remaining_time, oracle_value, secure_value
+            "Oracle({}) needs update: remaining time {}, oracle value {}, actual value {}".format(
+                oracle_address, remaining_time, oracle_value, secure_value
             ),
             "red",
         )
