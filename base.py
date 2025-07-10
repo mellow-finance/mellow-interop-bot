@@ -4,18 +4,23 @@ from web3.contract import Contract
 from eth_account import Account
 from web3.middleware import geth_poa_middleware
 
+
 BLOCK_GAP = 10000
 SECURE_INTERVAL = 30 * 60  # 30 minutes
 
 
-def print_colored(text: str, color="yellow") -> str:
+def add_color(text: str, color="yellow") -> str:
     if color == "red":
         text = "\033[31m" + text + "\033[0m"
     elif color == "green":
         text = "\033[32m" + text + "\033[0m"
     elif color == "yellow":
         text = "\033[33m" + text + "\033[0m"
-    print(text)
+    return text
+
+
+def print_colored(text: str, color="yellow") -> str:
+    print(add_color(text, color))
 
 
 def get_w3(rpc: str) -> Web3:
