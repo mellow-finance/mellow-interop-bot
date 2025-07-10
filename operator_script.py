@@ -126,8 +126,6 @@ def run(
         required_actions.append(
             "Please, wait for LayerZero tx finalization (~5-10 minutes) and rerun script again..."
         )
-    else:
-        return []
 
     data = target_helper.getAmounts(target_core_address, 0).call()
 
