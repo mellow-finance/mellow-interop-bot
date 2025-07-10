@@ -120,7 +120,9 @@ def run(
     elif current_ratio_d3 > max_source_ratio_d3:
         print("Assets surplus. Current ratio: {}%".format(current_ratio_d3 / 10))
         value = source_helper.quotePushToTarget(source_core_address).call()
-        required_actions.append(f"SourceCore.pushToTarget{{value:{value}}}()")
+        required_actions.append(
+            f"SourceCore({source_core.address}).pushToTarget{{value:{value}}}()"
+        )
         required_actions.append(
             "Please, wait for LayerZero tx finalization (~5-10 minutes) and rerun script again..."
         )
@@ -130,9 +132,11 @@ def run(
     data = target_helper.getAmounts(target_core_address, 0).call()
 
     if data[1]:
-        required_actions.append(f"TargetCore.claim({data[1].hex()})")
+        required_actions.append(
+            f"TargetCore({target_core.address}).claim({data[1].hex()})"
+        )
     if data[3] >= LAYER_ZERO_DUST:
-        required_actions.append(f"TargetCore.deposit({data[3]})")
+        required_actions.append(f"TargetCore({target_core.address}).deposit({data[3]})")
     return required_actions
 
 
