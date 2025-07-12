@@ -1,5 +1,5 @@
 from base import *
-from oracle_bot import run_oracle_validation
+from oracle_script import run_oracle_validation
 import time
 
 LAYER_ZERO_DUST = 1000_000_000_000
@@ -193,20 +193,27 @@ if __name__ == "__main__":
     source_core_helper = os.getenv("SOURCE_CORE_HELPER")
     target_core_helper = os.getenv("TARGET_CORE_HELPER")
 
-    source_core_address = os.getenv("SOURCE_CORE_ADDRESS")
-    target_core_address = os.getenv("TARGET_CORE_ADDRESS")
-
     source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 50))
     max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 100))
 
-    run(
-        source_core_address=source_core_address,
-        target_core_address=target_core_address,
-        source_rpc=source_rpc,
-        target_rpc=target_rpc,
-        source_core_helper=source_core_helper,
-        target_core_helper=target_core_helper,
-        operator_pk=operator_pk,
-        source_ratio_d3=source_ratio_d3,
-        max_source_ratio_d3=max_source_ratio_d3,
-    )
+    deployments = [
+        (
+            os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
+            os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
+        ),
+        # (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
+        # (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
+    ]
+
+    for source_core_address, target_core_address in deployments:
+        run(
+            source_core_address=source_core_address,
+            target_core_address=target_core_address,
+            source_rpc=source_rpc,
+            target_rpc=target_rpc,
+            source_core_helper=source_core_helper,
+            target_core_helper=target_core_helper,
+            operator_pk=operator_pk,
+            source_ratio_d3=source_ratio_d3,
+            max_source_ratio_d3=max_source_ratio_d3,
+        )

@@ -1,5 +1,5 @@
 from base import *
-from oracle_bot import run_oracle_validation
+from oracle_script import run_oracle_validation
 from typing import List
 
 LAYER_ZERO_DUST = 1000_000_000_000
@@ -157,8 +157,8 @@ if __name__ == "__main__":
             os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
             os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
         ),
-        (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
-        (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
+        # (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
+        # (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
     ]
 
     for source_core_address, target_core_address in deployments:

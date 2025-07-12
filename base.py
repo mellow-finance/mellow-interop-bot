@@ -6,7 +6,7 @@ from web3.middleware import geth_poa_middleware
 
 
 BLOCK_GAP = 10000
-SECURE_INTERVAL = 30 * 60  # 30 minutes
+SECURE_INTERVAL = 5 * 60  # 5 minutes
 
 
 def add_color(text: str, color="yellow") -> str:
