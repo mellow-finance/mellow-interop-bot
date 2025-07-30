@@ -99,7 +99,6 @@ def run(
                 assets_deficit, current_ratio_d3 / 10
             )
         )
-        print(target_core_address, assets_deficit)
         data = target_helper.getAmounts(target_core_address, assets_deficit).call()
         if data[2] > 0:
             required_actions.append(
@@ -112,7 +111,7 @@ def run(
         if data[0] > 0:
             value = target_helper.quotePushToSource(target_core_address).call()
             required_actions.append(
-                f"TargetCore({target_core.address}).pushToSource{{value: {value}}}({data[0]})"
+                f"TargetCore({target_core.address}).pushToSource{{value: {value}}}()"
             )
             required_actions.append(
                 "Please, wait for LayerZero tx finalization (~5-10 minutes) and rerun script again..."
@@ -137,7 +136,6 @@ def run(
         required_actions.append(f"TargetCore({target_core.address}).deposit({data[3]})")
     return required_actions
 
-
 if __name__ == "__main__":
     import os
     import dotenv
@@ -157,8 +155,8 @@ if __name__ == "__main__":
             os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
             os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
         ),
-        # (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
-        # (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
+        (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
+        (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
     ]
 
     for source_core_address, target_core_address in deployments:

@@ -93,8 +93,8 @@ if __name__ == "__main__":
             os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
             os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
         ),
-        # (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
-        # (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
+        (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
+        (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
     ]
 
     for source_core_address, target_core_address in deployments:
