@@ -59,7 +59,7 @@ def run_oracle_validation(
     secure_value = (source_value + target_value) * 10**18 // total_supply
 
     remaining_time = oracle_timestamp + oracle_max_age - timestamp
-    if remaining_time <= 24 * 3600 or oracle_value != secure_value:
+    if remaining_time <= 3600 or oracle_value != secure_value:
         print_colored(
             "Oracle({}) needs update: remaining time {}, oracle value {}, actual value {}".format(
                 oracle_address, remaining_time, oracle_value, secure_value
