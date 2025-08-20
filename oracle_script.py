@@ -69,8 +69,11 @@ def run_oracle_validation(
         return False
     else:
         print_colored(
-            "Oracle is up to date. Remaining time: {} hours".format(
-                round(remaining_time / 3600, 1)
+            "Oracle(address={}, chain_id={}) is up to date (value={}). Remaining time: {} hours".format(
+                oracle_address,
+                source_w3.eth.chain_id,
+                oracle_value,
+                round(remaining_time / 3600, 1),
             ),
             "green",
         )
@@ -83,21 +86,48 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv()
 
-    source_rpc = os.getenv("SOURCE_RPC")
     target_rpc = os.getenv("TARGET_RPC")
-    source_core_helper = os.getenv("SOURCE_CORE_HELPER")
     target_core_helper = os.getenv("TARGET_CORE_HELPER")
 
     deployments = [
         (
             os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
             os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
+            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
+            os.getenv("LISK_RPC"),
         ),
-        (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
-        (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
+        (
+            os.getenv("SOURCE_CORE_MBTC_ADDRESS"),
+            os.getenv("TARGET_CORE_MBTC_ADDRESS"),
+            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
+            os.getenv("LISK_RPC"),
+        ),
+        (
+            os.getenv("SOURCE_CORE_LSK_ADDRESS"),
+            os.getenv("TARGET_CORE_LSK_ADDRESS"),
+            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
+            os.getenv("LISK_RPC"),
+        ),
+        (
+            os.getenv("SOURCE_CORE_FRAX_ADDRESS"),
+            os.getenv("TARGET_CORE_FRAX_ADDRESS"),
+            os.getenv("SOURCE_HELPER_FRAX_ADDRESS"),
+            os.getenv("FRAX_RPC"),
+        ),
+        (
+            os.getenv("SOURCE_CORE_CYCLE_ADDRESS"),
+            os.getenv("TARGET_CORE_CYCLE_ADDRESS"),
+            os.getenv("SOURCE_HELPER_BSC_ADDRESS"),
+            os.getenv("BSC_RPC"),
+        ),
     ]
 
-    for source_core_address, target_core_address in deployments:
+    for (
+        source_core_address,
+        target_core_address,
+        source_core_helper,
+        source_rpc,
+    ) in deployments:
         run_oracle_validation(
             source_core_address=source_core_address,
             target_core_address=target_core_address,
