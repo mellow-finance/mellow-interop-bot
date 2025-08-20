@@ -1,4 +1,5 @@
-telegram-api-key: ${TELEGRAM_API_KEY}
+telegram-bot-api-key: ${TELEGRAM_BOT_API_KEY}
+telegram-group-chat-id: ${TELEGRAM_GROUP_CHAT_ID}
 
 oracle-freshness-in-seconds: ${ORACLE_FRESHNESS_IN_SECONDS:3600}
 

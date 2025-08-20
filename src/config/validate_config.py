@@ -1,5 +1,4 @@
 from web3_scripts.base import *
-from typing import List
 from .read_config import Config, SourceConfig, Deployment
 
 
@@ -15,8 +14,8 @@ def validate_config(config: Config):
 def validate_source(target_w3: Web3, source: SourceConfig):
     w3 = get_w3(source.rpc)
     validate_rpc_url(w3)
-    validate_deployments(w3, target_w3, source)
     validate_source_helper(w3, source)
+    validate_deployments(w3, target_w3, source)
 
 
 def validate_rpc_url(w3: Web3):

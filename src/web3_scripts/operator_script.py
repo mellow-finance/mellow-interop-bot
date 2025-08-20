@@ -1,5 +1,9 @@
-from base import *
-from oracle_script import run_oracle_validation
+try:
+    from .base import *
+    from .oracle_script import run_oracle_validation
+except ImportError:
+    from base import *
+    from oracle_script import run_oracle_validation
 from typing import List
 
 LAYER_ZERO_DUST = 1000_000_000_000
