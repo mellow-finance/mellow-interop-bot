@@ -8,6 +8,7 @@ def run_oracle_validation(
     target_rpc: str,
     source_core_helper: str,
     target_core_helper: str,
+    oracle_update_threshold: int = 3600,
 ) -> bool:
     source_w3 = get_w3(source_rpc)
     target_w3 = get_w3(target_rpc)
@@ -59,21 +60,24 @@ def run_oracle_validation(
     secure_value = (source_value + target_value) * 10**18 // total_supply
 
     remaining_time = oracle_timestamp + oracle_max_age - timestamp
-    if remaining_time <= 3600 or oracle_value != secure_value:
+    remaining_time_formatted = (
+        f"{round(remaining_time / 3600, 1)} hours" 
+        if remaining_time > 3600 
+        else f"{remaining_time} seconds"
+    )
+    
+    if remaining_time <= oracle_update_threshold or oracle_value != secure_value:
         print_colored(
-            "Oracle({}) needs update: remaining time {}, oracle value {}, actual value {}".format(
-                oracle_address, remaining_time, oracle_value, secure_value
+            "Oracle(address={}, chain_id={}) needs update: remaining time {}, oracle value {}, actual value {}".format(
+                oracle_address, source_w3.eth.chain_id, remaining_time_formatted, oracle_value, secure_value
             ),
             "red",
         )
         return False
     else:
         print_colored(
-            "Oracle(address={}, chain_id={}) is up to date (value={}). Remaining time: {} hours".format(
-                oracle_address,
-                source_w3.eth.chain_id,
-                oracle_value,
-                round(remaining_time / 3600, 1),
+            "Oracle(address={}, chain_id={}) is up to date (value={}). Remaining time: {}".format(
+                oracle_address, source_w3.eth.chain_id, oracle_value, remaining_time_formatted
             ),
             "green",
         )
@@ -85,6 +89,9 @@ if __name__ == "__main__":
     import dotenv
 
     dotenv.load_dotenv()
+
+    # Oracle update threshold in seconds (default: 1 hour)
+    ORACLE_UPDATE_THRESHOLD = int(os.getenv("ORACLE_UPDATE_THRESHOLD", "3600"))
 
     target_rpc = os.getenv("TARGET_RPC")
     target_core_helper = os.getenv("TARGET_CORE_HELPER")
@@ -135,4 +142,5 @@ if __name__ == "__main__":
             target_rpc=target_rpc,
             source_core_helper=source_core_helper,
             target_core_helper=target_core_helper,
+            oracle_update_threshold=ORACLE_UPDATE_THRESHOLD,
         )
