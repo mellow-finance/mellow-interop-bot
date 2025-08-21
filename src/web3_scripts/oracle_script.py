@@ -11,11 +11,12 @@ class OracleValidationResult:
     chain_id: int
     oracle_value: int
     actual_value: int
-    needs_update: bool
     remaining_time: int
     source_nonces: tuple[int, int]
     target_nonces: tuple[int, int]
     transfer_in_progress: bool
+    almost_expired: bool
+    incorrect_value: bool
 
 
 def run_oracle_validation(
@@ -71,62 +72,70 @@ def run_oracle_validation(
     transfer_in_progress = (
         source_nonces[0] != target_nonces[1] or source_nonces[1] != target_nonces[0]
     )
-    needs_update = not transfer_in_progress and (
-        remaining_time <= oracle_freshness_in_seconds or oracle_value != secure_value
-    )
+    almost_expired = remaining_time <= oracle_freshness_in_seconds
+    incorrect_value = oracle_value != secure_value
 
     result = OracleValidationResult(
         oracle_address=oracle_address,
         chain_id=source_w3.eth.chain_id,
         oracle_value=oracle_value,
         actual_value=secure_value,
-        needs_update=needs_update,
         remaining_time=remaining_time,
         source_nonces=source_nonces,
         target_nonces=target_nonces,
         transfer_in_progress=transfer_in_progress,
+        almost_expired=almost_expired,
+        incorrect_value=incorrect_value,
     )
 
-    color = "green"
-    if transfer_in_progress:
-        color = "yellow"
-    elif needs_update:
-        color = "red"
-
-    print_colored(format_oracle_validation_result(result), color)
+    print_oracle_validation_result(result)
 
     return result
 
 
-def format_oracle_validation_result(result: OracleValidationResult) -> str:
+def print_oracle_validation_result(result: OracleValidationResult) -> str:
     if result.transfer_in_progress:
-        return "Oracle(address={}, chain_id={}) has OFT transfers in progress: source nonces {}, target nonces {}".format(
-            result.oracle_address,
-            result.chain_id,
-            result.source_nonces,
-            result.target_nonces,
+        print_colored(
+            "Oracle(address={}, chain_id={}) has OFT transfers in progress: source nonces {}, target nonces {}".format(
+                result.oracle_address,
+                result.chain_id,
+                result.source_nonces,
+                result.target_nonces,
+            ),
+            "yellow",
         )
+        return
 
-    remaining_time_formatted = (
-        f"{round(result.remaining_time / 3600, 1)} hours"
-        if result.remaining_time > 3600
-        else f"{result.remaining_time} seconds"
-    )
-    if result.needs_update:
-        return "Oracle(address={}, chain_id={}) needs update: remaining time {}, oracle value {}, actual value {}".format(
-            result.oracle_address,
-            result.chain_id,
-            remaining_time_formatted,
-            result.oracle_value,
-            result.actual_value,
+    remaining_time_formatted = format_remaining_time(result.remaining_time)
+    if result.almost_expired or result.incorrect_value:
+        print_colored(
+            "Oracle(address={}, chain_id={}) needs update: remaining time {}, oracle value {}, actual value {}".format(
+                result.oracle_address,
+                result.chain_id,
+                remaining_time_formatted,
+                result.oracle_value,
+                result.actual_value,
+            ),
+            "red",
         )
     else:
-        return "Oracle(address={}, chain_id={}) is up to date (value={}). Remaining time: {}".format(
-            result.oracle_address,
-            result.chain_id,
-            result.oracle_value,
-            remaining_time_formatted,
+        print_colored(
+            "Oracle(address={}, chain_id={}) is up to date (value={}). Remaining time: {}".format(
+                result.oracle_address,
+                result.chain_id,
+                result.oracle_value,
+                remaining_time_formatted,
+            ),
+            "green",
         )
+
+
+def format_remaining_time(remaining_time: int) -> str:
+    return (
+        f"{round(remaining_time / 3600, 1)} hours"
+        if remaining_time > 3600
+        else f"{remaining_time} seconds"
+    )
 
 
 if __name__ == "__main__":
