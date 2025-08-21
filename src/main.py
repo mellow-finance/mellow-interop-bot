@@ -64,7 +64,7 @@ def compose_oracle_data_message(
     # - Transfer is in progress? When it's almost expired?
     # - RPC is not available?
     should_report = any(
-        oracle_data.validation is not None
+        oracle_data.validation is None
         or (
             oracle_data.validation.almost_expired
             or (
