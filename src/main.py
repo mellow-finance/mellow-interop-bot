@@ -34,11 +34,14 @@ async def main():
         if not message:
             print("No message to send")
         else:
-            await send_message(
-                config.telegram_bot_api_key,
-                config.telegram_group_chat_id,
-                message,
-            )
+            if os.getenv("DRY_RUN") == "true":
+                print(message)
+            else:
+                await send_message(
+                    config.telegram_bot_api_key,
+                    config.telegram_group_chat_id,
+                    message,
+                )
     except FileNotFoundError:
         print(f"Error: config.yml not found")
     except yaml.YAMLError as e:

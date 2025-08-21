@@ -2,12 +2,13 @@ import sys
 import os
 
 if __name__ == "__main__":
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from web3_scripts.base import *
     from config.read_config import Config, SourceConfig, Deployment, read_config
 else:
     from web3_scripts.base import *
     from .read_config import Config, SourceConfig, Deployment
+
 
 def validate_config(config: Config):
     w3 = get_w3(config.target_rpc)
@@ -148,6 +149,7 @@ def validate_target_helper(w3: Web3, config: Config):
         raise Exception(
             f"Target helper ({config.target_core_helper}) is not valid: {e}"
         )
+
 
 if __name__ == "__main__":
     import os
