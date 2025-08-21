@@ -12,7 +12,7 @@ else:
 
 def validate_config(config: Config):
     w3 = get_w3(config.target_rpc)
-    validate_rpc_url(w3)
+    validate_rpc_url(w3, "target")
     validate_target_helper(w3, config)
 
     for source in config.sources:
@@ -21,15 +21,16 @@ def validate_config(config: Config):
 
 def validate_source(target_w3: Web3, source: SourceConfig):
     w3 = get_w3(source.rpc)
-    validate_rpc_url(w3)
+    validate_rpc_url(w3, source.name)
     validate_source_helper(w3, source)
     validate_deployments(w3, target_w3, source)
 
 
-def validate_rpc_url(w3: Web3):
+def validate_rpc_url(w3: Web3, label: str):
     """
     Validate the RPC URL is an active RPC endpoint.
     """
+    print(f"Validating RPC URL for {label}...")
     if w3.eth.get_block("latest").number <= 0:
         raise Exception(f"RPC URL {w3.provider.endpoint_uri} is not valid")
 
@@ -81,6 +82,9 @@ def validate_deployments(source_w3: Web3, target_w3: Web3, source: SourceConfig)
         target_cores.add(deployment.target_core)
 
         # Validate source <-> target core addresses refer to each other
+        print(
+            f"Validating deployment pair {deployment.name} ({deployment.source_core} <-> {deployment.target_core}) for source {source.name}..."
+        )
         validate_deployment_pair(source_w3, target_w3, deployment)
 
 
@@ -108,6 +112,7 @@ def validate_source_helper(w3: Web3, source: SourceConfig):
     """
     Validate the source helper address is valid SourceHelper contract.
     """
+    print(f"Validating source helper {source.source_core_helper}...")
     try:
         source_helper_contract = get_contract(
             w3, source.source_core_helper, "SourceHelper"
@@ -131,6 +136,7 @@ def validate_target_helper(w3: Web3, config: Config):
     """
     Validate the target helper address is valid TargetHelper contract.
     """
+    print(f"Validating target helper {config.target_core_helper}...")
     try:
         target_helper_contract = get_contract(
             w3, config.target_core_helper, "TargetHelper"

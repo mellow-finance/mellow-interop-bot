@@ -64,7 +64,7 @@ def compose_oracle_data_message(
 
     # Skip if there are no required updates
     should_report = any(
-        oracle_data.validation is None # Error during validation on-chain data
+        oracle_data.validation is None  # Error during validation on-chain data
         or oracle_data.validation.almost_expired
         or oracle_data.validation.transfer_in_progress
         or oracle_data.validation.incorrect_value
