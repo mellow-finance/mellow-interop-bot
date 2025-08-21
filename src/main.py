@@ -63,18 +63,11 @@ def compose_oracle_data_message(
         return ""
 
     # Skip if there are no required updates
-    # TODO: Open questions, should we report if:
-    # - Transfer is in progress? When it's almost expired?
-    # - RPC is not available?
     should_report = any(
-        oracle_data.validation is None
-        or (
-            oracle_data.validation.almost_expired
-            or (
-                oracle_data.validation.incorrect_value
-                and not oracle_data.validation.transfer_in_progress
-            )
-        )
+        oracle_data.validation is None # Error during validation on-chain data
+        or oracle_data.validation.almost_expired
+        or oracle_data.validation.transfer_in_progress
+        or oracle_data.validation.incorrect_value
         for _, oracle_data in oracle_validation_results
     )
     if not should_report:
@@ -96,13 +89,13 @@ def compose_oracle_data_message(
             if oracle_data.validation is not None:
                 validation = oracle_data.validation
                 if validation.transfer_in_progress:
-                    message += f"ℹ️ OFT transfers in progress (remaining time: {format_remaining_time(validation.remaining_time)}), address: {validation.oracle_address}"
+                    message += f"ℹ️ OFT transfers in progress (remaining time: {format_remaining_time(validation.remaining_time)}), address: {validation.oracle_address})"
                 elif validation.almost_expired:
                     message += f"⚠️ Almost expired, needs update (remaining time: {format_remaining_time(validation.remaining_time)}, address: {validation.oracle_address})"
                 elif validation.incorrect_value:
                     message += f"⚠️ Incorrect value, needs update (oracle value: {validation.oracle_value}, actual value: {validation.actual_value}, address: {validation.oracle_address})"
                 else:
-                    message += f"✅ Up to date (remaining time: {format_remaining_time(validation.remaining_time)}"
+                    message += f"✅ Up to date (remaining time: {format_remaining_time(validation.remaining_time)})"
             else:
                 message += f"❌ Error during validation (RPC problem)"
             message += "\n"
