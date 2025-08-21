@@ -140,6 +140,7 @@ def run(
         required_actions.append(f"TargetCore({target_core.address}).deposit({data[3]})")
     return required_actions
 
+
 if __name__ == "__main__":
     import os
     import dotenv

@@ -83,8 +83,12 @@ def validate_deployment_pair(source_w3: Web3, target_w3: Web3, deployment: Deplo
     source_contract = get_contract(source_w3, deployment.source_core, "SourceCore")
     target_contract = get_contract(target_w3, deployment.target_core, "TargetCore")
 
-    source_core_address_bytes32 = Web3.to_checksum_address(target_contract.functions.sourceCoreAddress().call()[-20:].hex())
-    target_core_address_bytes32 = Web3.to_checksum_address(source_contract.functions.targetCoreAddress().call()[-20:].hex())
+    source_core_address_bytes32 = Web3.to_checksum_address(
+        target_contract.functions.sourceCoreAddress().call()[-20:].hex()
+    )
+    target_core_address_bytes32 = Web3.to_checksum_address(
+        source_contract.functions.targetCoreAddress().call()[-20:].hex()
+    )
 
     if source_core_address_bytes32 != deployment.source_core:
         raise Exception(f"Source core address mismatch for {deployment.name}")
