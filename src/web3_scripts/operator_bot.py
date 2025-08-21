@@ -41,17 +41,27 @@ def run(
     source_ratio_d3: int,
     max_source_ratio_d3: int,
 ) -> None:
-    # TODO
-    if not run_oracle_validation(
+    oracle_validation_result = run_oracle_validation(
         source_core_address,
         target_core_address,
         source_rpc,
         target_rpc,
         source_core_helper,
         target_core_helper,
-    ):
-        print_colored("Oracle validation failed", "red")
-        return
+        oracle_freshness_in_seconds=3600,
+    )
+
+    if oracle_validation_result.transfer_in_progress:
+        print_colored("OFT transfers in progress", "yellow")
+        return []
+
+    if oracle_validation_result.almost_expired:
+        print_colored("Oracle is almost expired", "red")
+        return []
+
+    if oracle_validation_result.incorrect_value:
+        print_colored("Oracle value is incorrect", "red")
+        return []
 
     source_w3 = get_w3(source_rpc)
     target_w3 = get_w3(target_rpc)
@@ -186,38 +196,131 @@ def run(
         execute(target_core.deposit(data[3]), 0, operator_pk)
 
 
+def parse_deployments(config, deployments_raw):
+    if not deployments_raw:
+        print_colored("DEPLOYMENTS environment variable not set", "red")
+        return []
+
+    # Get all available pairs (e.g. BSC:CYCLE, FRAX:FRAX, ...) for error messages
+    available_pairs = []
+    for source in config.sources:
+        for deployment in source.deployments:
+            available_pairs.append(f"{source.name}:{deployment.name}")
+
+    valid_deployments = []
+    for deployment_pair in deployments_raw.split(","):
+        deployment_pair = deployment_pair.strip()
+
+        try:
+            source_label, deployment_label = deployment_pair.split(":")
+        except ValueError:
+            print_colored(
+                f"Invalid deployment format '{deployment_pair}'. Expected format: SOURCE:DEPLOYMENT. "
+                f"Available pairs: {', '.join(available_pairs)}",
+                "red",
+            )
+            continue
+
+        # Find source
+        source = next((s for s in config.sources if s.name == source_label), None)
+        if not source:
+            print_colored(
+                f"Source '{source_label}' not found. Available pairs: {', '.join(available_pairs)}",
+                "red",
+            )
+            continue
+
+        # Find deployment within source
+        deployment = next(
+            (d for d in source.deployments if d.name == deployment_label), None
+        )
+        if not deployment:
+            print_colored(
+                f"Deployment '{source_label}:{deployment_label}' not found. Available pairs: {', '.join(available_pairs)}",
+                "red",
+            )
+            continue
+
+        valid_deployments.append((source, deployment))
+
+    return valid_deployments
+
+
 if __name__ == "__main__":
     import os
     import dotenv
+    import sys
+    from pathlib import Path
+
+    # Add src directory to path to import config module
+    src_path = Path(__file__).parent.parent
+    sys.path.insert(0, str(src_path))
+
+    from config.read_config import read_config
 
     dotenv.load_dotenv()
 
-    operator_pk = os.getenv("OPERATOR_PK")
-    source_rpc = os.getenv("SOURCE_RPC")
-    target_rpc = os.getenv("TARGET_RPC")
-    source_core_helper = os.getenv("SOURCE_CORE_HELPER")
-    target_core_helper = os.getenv("TARGET_CORE_HELPER")
+    # Read configuration from config.yml
+    config_path = src_path.parent / "config.yml"
+    config = read_config(str(config_path))
 
+    # Get environment variables
+    operator_pk = os.getenv("OPERATOR_PK")
+    raw_deployments = os.getenv("DEPLOYMENTS")
     source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 50))
     max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 100))
 
-    deployments = [
-        (
-            os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
-            os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
-        ),
-        # (os.getenv("SOURCE_CORE_MBTC_ADDRESS"), os.getenv("TARGET_CORE_MBTC_ADDRESS")),
-        # (os.getenv("SOURCE_CORE_LSK_ADDRESS"), os.getenv("TARGET_CORE_LSK_ADDRESS")),
-    ]
+    # Parse deployments
+    deployments = parse_deployments(config, raw_deployments)
+    if not deployments or len(deployments) == 0:
+        print_colored("No valid deployments found", "red")
+        sys.exit(1)
 
-    for source_core_address, target_core_address in deployments:
+    operator_address = Account.from_key(operator_pk).address
+
+    # Print configuration summary
+    print("Configuration:\n")
+    print(f"Operator Address: {add_color(operator_address, 'yellow')}")
+    print(f"Source Ratio D3: {add_color(str(source_ratio_d3), 'yellow')}")
+    print(f"Max Source Ratio D3: {add_color(str(max_source_ratio_d3), 'yellow')}")
+    print(
+        f"Target chain ID: {add_color(str(get_w3(config.target_rpc).eth.chain_id), 'yellow')}"
+    )
+    print("\nDeployments:")
+
+    source_chain_ids = {}
+    for source, deployment in parse_deployments(config, raw_deployments):
+        if source.name not in source_chain_ids:
+            source_chain_ids[source.name] = get_w3(source.rpc).eth.chain_id
+        print(f"- {source.name} ({source_chain_ids[source.name]}): {deployment.name}")
+        print(f"\tSource Core Helper: {add_color(source.source_core_helper, 'yellow')}")
+        print(f"\tSource Core: {add_color(deployment.source_core, 'yellow')}")
+        print(f"\tTarget Core Helper: {add_color(config.target_core_helper, 'yellow')}")
+        print(f"\tTarget Core: {add_color(deployment.target_core, 'yellow')}")
+
+    # Wait for user confirmation
+    try:
+        user_input = (
+            input("\nEnter 'y' to continue, any other key to quit: ").strip().lower()
+        )
+        if user_input == "y":
+            print("Continuing with operations...")
+        else:
+            print("Operation cancelled by user.")
+            sys.exit(0)
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user (Ctrl+C).")
+        sys.exit(0)
+
+    for source, deployment in deployments:
+        print(f"\nProcessing deployment {deployment.name} of {source.name}...")
         run(
-            source_core_address=source_core_address,
-            target_core_address=target_core_address,
-            source_rpc=source_rpc,
-            target_rpc=target_rpc,
-            source_core_helper=source_core_helper,
-            target_core_helper=target_core_helper,
+            source_core_address=deployment.source_core,
+            target_core_address=deployment.target_core,
+            source_rpc=source.rpc,
+            target_rpc=config.target_rpc,
+            source_core_helper=source.source_core_helper,
+            target_core_helper=config.target_core_helper,
             operator_pk=operator_pk,
             source_ratio_d3=source_ratio_d3,
             max_source_ratio_d3=max_source_ratio_d3,

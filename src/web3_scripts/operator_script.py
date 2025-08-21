@@ -19,16 +19,26 @@ def run(
     source_ratio_d3: int,
     max_source_ratio_d3: int,
 ) -> List[str]:
-    # TODO
-    if not run_oracle_validation(
+    oracle_validation_result = run_oracle_validation(
         source_core_address,
         target_core_address,
         source_rpc,
         target_rpc,
         source_core_helper,
         target_core_helper,
-    ):
-        print_colored("Oracle validation failed", "red")
+        oracle_freshness_in_seconds=3600,
+    )
+
+    if oracle_validation_result.transfer_in_progress:
+        print_colored("OFT transfers in progress", "yellow")
+        return []
+
+    if oracle_validation_result.almost_expired:
+        print_colored("Oracle is almost expired", "red")
+        return []
+
+    if oracle_validation_result.incorrect_value:
+        print_colored("Oracle value is incorrect", "red")
         return []
 
     source_w3 = get_w3(source_rpc)
@@ -145,47 +155,39 @@ def run(
 if __name__ == "__main__":
     import os
     import dotenv
+    import sys
+    from pathlib import Path
+
+    # Add src directory to path to import config module
+    src_path = Path(__file__).parent.parent
+    sys.path.insert(0, str(src_path))
+
+    from config.read_config import read_config
 
     dotenv.load_dotenv()
 
-    target_rpc = os.getenv("TARGET_RPC")
-    target_core_helper = os.getenv("TARGET_CORE_HELPER")
+    # Read configuration from config.yml
+    config_path = src_path.parent / "config.yml"
+    config = read_config(str(config_path))
+
+    target_rpc = config.target_rpc
+    target_core_helper = config.target_core_helper
 
     source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 50))
     max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 100))
 
-    deployments = [
-        (
-            os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
-            os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
-            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
-            os.getenv("LISK_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_MBTC_ADDRESS"),
-            os.getenv("TARGET_CORE_MBTC_ADDRESS"),
-            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
-            os.getenv("LISK_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_LSK_ADDRESS"),
-            os.getenv("TARGET_CORE_LSK_ADDRESS"),
-            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
-            os.getenv("LISK_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_FRAX_ADDRESS"),
-            os.getenv("TARGET_CORE_FRAX_ADDRESS"),
-            os.getenv("SOURCE_HELPER_FRAX_ADDRESS"),
-            os.getenv("FRAX_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_CYCLE_ADDRESS"),
-            os.getenv("TARGET_CORE_CYCLE_ADDRESS"),
-            os.getenv("SOURCE_HELPER_BSC_ADDRESS"),
-            os.getenv("BSC_RPC"),
-        ),
-    ]
+    # Build deployments from config
+    deployments = []
+    for source in config.sources:
+        for deployment in source.deployments:
+            deployments.append(
+                (
+                    deployment.source_core,
+                    deployment.target_core,
+                    source.source_core_helper,
+                    source.rpc,
+                )
+            )
 
     for (
         source_core_address,
@@ -199,21 +201,26 @@ if __name__ == "__main__":
             .call()
         )
         print(f"Analyzing {add_color(source_core_name, 'yellow')} vault...")
-        required_actions = run(
-            source_core_address=source_core_address,
-            target_core_address=target_core_address,
-            source_rpc=source_rpc,
-            target_rpc=target_rpc,
-            source_core_helper=source_core_helper,
-            target_core_helper=target_core_helper,
-            source_ratio_d3=source_ratio_d3,
-            max_source_ratio_d3=max_source_ratio_d3,
-        )
 
-        if required_actions:
-            print("Required actions:")
-            for index, action in enumerate(required_actions):
-                print(f'{index + 1}: {add_color(action, "red")}')
-        else:
-            print_colored("No actions required.", "green")
+        try:
+            required_actions = run(
+                source_core_address=source_core_address,
+                target_core_address=target_core_address,
+                source_rpc=source_rpc,
+                target_rpc=target_rpc,
+                source_core_helper=source_core_helper,
+                target_core_helper=target_core_helper,
+                source_ratio_d3=source_ratio_d3,
+                max_source_ratio_d3=max_source_ratio_d3,
+            )
+
+            if required_actions:
+                print("Required actions:")
+                for index, action in enumerate(required_actions):
+                    print(f'{index + 1}: {add_color(action, "red")}')
+            else:
+                print_colored("No actions required.", "green")
+        except Exception as e:
+            print_colored(f"Error: {e}", "red")
+
         print("\n" + "-" * 25 + "\n")
