@@ -289,7 +289,7 @@ if __name__ == "__main__":
     print("\nDeployments:")
 
     source_chain_ids = {}
-    for source, deployment in parse_deployments(config, raw_deployments):
+    for source, deployment in deployments:
         if source.name not in source_chain_ids:
             source_chain_ids[source.name] = get_w3(source.rpc).eth.chain_id
         print(f"- {source.name} ({source_chain_ids[source.name]}): {deployment.name}")

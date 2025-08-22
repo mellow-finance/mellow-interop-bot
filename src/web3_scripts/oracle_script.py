@@ -139,47 +139,37 @@ def format_remaining_time(remaining_time: int) -> str:
 
 
 if __name__ == "__main__":
-    import os
     import dotenv
+    import sys
+    from pathlib import Path
+
+    # Add src directory to path to import config module
+    src_path = Path(__file__).parent.parent
+    sys.path.insert(0, str(src_path))
+
+    from config.read_config import read_config
 
     dotenv.load_dotenv()
 
-    oracle_freshness_in_seconds = int(os.getenv("ORACLE_FRESHNESS_IN_SECONDS", "3600"))
-    target_rpc = os.getenv("TARGET_RPC")
-    target_core_helper = os.getenv("TARGET_CORE_HELPER")
+    # Read configuration from config.yml
+    config_path = src_path.parent / "config.yml"
+    config = read_config(str(config_path))
 
-    deployments = [
-        (
-            os.getenv("SOURCE_CORE_WSTETH_ADDRESS"),
-            os.getenv("TARGET_CORE_WSTETH_ADDRESS"),
-            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
-            os.getenv("LISK_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_MBTC_ADDRESS"),
-            os.getenv("TARGET_CORE_MBTC_ADDRESS"),
-            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
-            os.getenv("LISK_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_LSK_ADDRESS"),
-            os.getenv("TARGET_CORE_LSK_ADDRESS"),
-            os.getenv("SOURCE_HELPER_LISK_ADDRESS"),
-            os.getenv("LISK_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_FRAX_ADDRESS"),
-            os.getenv("TARGET_CORE_FRAX_ADDRESS"),
-            os.getenv("SOURCE_HELPER_FRAX_ADDRESS"),
-            os.getenv("FRAX_RPC"),
-        ),
-        (
-            os.getenv("SOURCE_CORE_CYCLE_ADDRESS"),
-            os.getenv("TARGET_CORE_CYCLE_ADDRESS"),
-            os.getenv("SOURCE_HELPER_BSC_ADDRESS"),
-            os.getenv("BSC_RPC"),
-        ),
-    ]
+    target_rpc = config.target_rpc
+    target_core_helper = config.target_core_helper
+
+    # Build deployments from config
+    deployments = []
+    for source in config.sources:
+        for deployment in source.deployments:
+            deployments.append(
+                (
+                    deployment.source_core,
+                    deployment.target_core,
+                    source.source_core_helper,
+                    source.rpc,
+                )
+            )
 
     for (
         source_core_address,
@@ -194,5 +184,5 @@ if __name__ == "__main__":
             target_rpc=target_rpc,
             source_core_helper=source_core_helper,
             target_core_helper=target_core_helper,
-            oracle_freshness_in_seconds=oracle_freshness_in_seconds,
+            oracle_freshness_in_seconds=config.oracle_freshness_in_seconds,
         )
