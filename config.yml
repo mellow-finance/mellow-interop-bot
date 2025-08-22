@@ -11,7 +11,7 @@ sources:
     rpc: ${BSC_RPC:https://bsc.drpc.org}
     source-core-helper: "0xa5FAfF49394F1912a68E8F5bDD7BEED690eD22B3"
     deployments:
-      - name: CYCLE
+      - name: CYC
         source-core: "0xc8e046fe778BE29572016d1f703e9B2ff77a207D"
         target-core: "0xAdEcB7647C3370A40c9F06FB8F5F709c87324932"
 
@@ -27,10 +27,10 @@ sources:
     rpc: ${LISK_RPC:https://lisk.drpc.org}
     source-core-helper: "0xfefbd2a8e29402b61e7d78a8cb141ef809b5a56a"
     deployments:
-      - name: wstETH
+      - name: lskETH
         source-core: "0x1b10E2270780858923cdBbC9B5423e29fffD1A44"
         target-core: "0x7E0E4B05898181a597673cD5a8FeF2B9E36bEC97"
-      - name: mBTC
+      - name: M-BTC
         source-core: "0xa67E8B2E43B70D98E1896D3f9d563f3ABdB8Adcd"
         target-core: "0xB2657a1EB016692509F321A4365551e2EC1173C2"
       - name: LSK

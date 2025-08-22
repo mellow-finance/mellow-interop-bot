@@ -107,6 +107,8 @@ def validate_deployment_pair(source_w3: Web3, target_w3: Web3, deployment: Deplo
     if target_core_address_bytes32 != deployment.target_core:
         raise Exception(f"Target core address mismatch for {deployment.name}")
 
+    validate_symbol(source_w3, target_w3, deployment)
+
 
 def validate_source_helper(w3: Web3, source: SourceConfig):
     """
@@ -155,6 +157,49 @@ def validate_target_helper(w3: Web3, config: Config):
         raise Exception(
             f"Target helper ({config.target_core_helper}) is not valid: {e}"
         )
+
+
+def validate_symbol(source_w3: Web3, target_w3: Web3, deployment: Deployment):
+    """
+    Validate that the deployment name (from config.yml) matches the symbol of the source core, target OFT, and target vault.
+    """
+    print(f"Validating symbol matching for {deployment.name}...")
+    if deployment.name.startswith("_"):
+        print(
+            f"Skipping symbol validation for {deployment.name} (due to '_' prefix)..."
+        )
+        return
+
+    source_contract = get_contract(source_w3, deployment.source_core, "ERC20")
+
+    target_oft_address = (
+        get_contract(target_w3, deployment.target_core, "TargetCore")
+        .functions.oft()
+        .call()
+    )
+    target_vault_address = (
+        get_contract(target_w3, deployment.target_core, "TargetCore")
+        .functions.vault()
+        .call()
+    )
+
+    target_oft_contract = get_contract(target_w3, target_oft_address, "ERC20")
+    target_vault_contract = get_contract(target_w3, target_vault_address, "ERC20")
+
+    source_core_symbol = source_contract.functions.symbol().call()
+    target_oft_symbol = target_oft_contract.functions.symbol().call()
+    target_vault_symbol = target_vault_contract.functions.symbol().call()
+
+    unique_symbols = set([source_core_symbol, target_oft_symbol, target_vault_symbol])
+    for symbol in unique_symbols:
+        if not deployment.name in symbol:
+            raise Exception(
+                f"Deployment name {deployment.name} should be substring of every symbol: {', '.join(unique_symbols)}. "
+                f"Source core: {source_core_symbol}, Target OFT: {target_oft_symbol}, Target Vault: {target_vault_symbol}"
+            )
+    print(
+        f"Deployment name {deployment.name} matches every symbol: {', '.join(unique_symbols)} ✅"
+    )
 
 
 if __name__ == "__main__":
