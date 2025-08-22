@@ -5,7 +5,7 @@ import asyncio
 from collections import defaultdict
 from typing import List, Optional, Tuple
 
-from telegram_bot import send_message
+from telegram_bot import send_message, print_telegram_info
 from config import read_config, Config, SourceConfig
 from web3_scripts import (
     OracleValidationResult,
@@ -23,25 +23,30 @@ class OracleData:
 
 async def main():
     try:
+        # Load environment variables
         dotenv.load_dotenv()
 
+        # Read config
         config = read_config(os.getcwd() + "/config.yml")
 
+        # Print Telegram info (Bot and group)
+        await print_telegram_info(
+            config.telegram_bot_api_key, config.telegram_group_chat_id
+        )
+
+        # Validate and get oracles data
         oracle_validation_results = validate_oracles(config)
 
+        # Compose message
         message = compose_oracle_data_message(config, oracle_validation_results)
 
+        # Send message
         if not message:
             print("No message to send")
         else:
-            if os.getenv("DRY_RUN") == "true":
-                print(message)
-            else:
-                await send_message(
-                    config.telegram_bot_api_key,
-                    config.telegram_group_chat_id,
-                    message,
-                )
+            await send_message(
+                config.telegram_bot_api_key, config.telegram_group_chat_id, message
+            )
     except FileNotFoundError:
         print(f"Error: config.yml not found")
     except yaml.YAMLError as e:
