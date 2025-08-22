@@ -42,7 +42,7 @@ Optional if `DRY_RUN` is `true`:
     pip install -r requirements.txt
     ```
 
-3. Set up environment variables if needed (you can use `.env` file). It's recommended to explicitly set `*_RPC` variables to use custom RPC endpoints to avoid 400/429 network errors.
+3. Set up environment variables if needed (you can use `.env` file). It is recommended to explicitly set `*_RPC` variables to use custom RPC endpoints to avoid 400/429 network errors.
 
 4. Run the main script:
 
