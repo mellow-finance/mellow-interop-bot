@@ -1,2 +1,4 @@
+black==25.1.0
 python-dotenv==1.1.0
+python-telegram-bot==22.3
 web3==6.11.0
