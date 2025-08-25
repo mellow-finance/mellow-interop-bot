@@ -161,7 +161,7 @@ def validate_target_helper(w3: Web3, config: Config):
 
 def validate_symbol(source_w3: Web3, target_w3: Web3, deployment: Deployment):
     """
-    Validate that the deployment name (from config.yml) matches the symbol of the source core, target OFT, and target vault.
+    Validate that the deployment name (from config.json) matches the symbol of the source core, target OFT, and target vault.
     """
     print(f"Validating symbol matching for {deployment.name}...")
     if deployment.name.startswith("_"):
@@ -170,7 +170,7 @@ def validate_symbol(source_w3: Web3, target_w3: Web3, deployment: Deployment):
         )
         return
 
-    source_contract = get_contract(source_w3, deployment.source_core, "ERC20")
+    source_contract = get_contract(source_w3, deployment.source_core, "SourceCore")
 
     target_oft_address = (
         get_contract(target_w3, deployment.target_core, "TargetCore")
@@ -183,8 +183,8 @@ def validate_symbol(source_w3: Web3, target_w3: Web3, deployment: Deployment):
         .call()
     )
 
-    target_oft_contract = get_contract(target_w3, target_oft_address, "ERC20")
-    target_vault_contract = get_contract(target_w3, target_vault_address, "ERC20")
+    target_oft_contract = get_contract(target_w3, target_oft_address, "SourceCore")
+    target_vault_contract = get_contract(target_w3, target_vault_address, "SourceCore")
 
     source_core_symbol = source_contract.functions.symbol().call()
     target_oft_symbol = target_oft_contract.functions.symbol().call()
@@ -208,6 +208,6 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv()
 
-    config = read_config(os.getcwd() + "/config.yml")
+    config = read_config(os.getcwd() + "/config.json")
 
     validate_config(config)

@@ -14,10 +14,10 @@ A cross-chain oracle monitoring and validation bot that tracks oracle states acr
 All environment variables can be optional.
 
 - `ORACLE_FRESHNESS_IN_SECONDS` - Oracle freshness threshold (default: `3600`).
-- `TARGET_RPC` - Target blockchain RPC endpoint (see default in `config.yml`).
-- `BSC_RPC` - BSC RPC endpoint (see default in `config.yml`).
-- `FRAX_RPC` - Fraxtal RPC endpoint (see default in `config.yml`).
-- `LISK_RPC` - Lisk RPC endpoint (see default in `config.yml`).
+- `TARGET_RPC` - Target blockchain RPC endpoint (see default in `config.json`).
+- `BSC_RPC` - BSC RPC endpoint (see default in `config.json`).
+- `FRAX_RPC` - Fraxtal RPC endpoint (see default in `config.json`).
+- `LISK_RPC` - Lisk RPC endpoint (see default in `config.json`).
 - `DRY_RUN` - Run without sending telegram messages (default: `false`).
 
 Optional if `DRY_RUN` is `true`:
@@ -72,7 +72,7 @@ Optional if `DRY_RUN` is `true`:
 
 ### Running scripts
 
-The `./src/web3_scripts` folder contains scripts that can be run separately. These scripts are also based on the configuration from the `config.yml` file, but have their own settings provided through environment variables.
+The `./src/web3_scripts` folder contains scripts that can be run separately. These scripts are also based on the configuration from the `config.json` file, but have their own settings provided through environment variables.
 
 #### `oracle_script.py`
 
@@ -112,4 +112,4 @@ Environment variables
 Same `SOURCE_RATIO_D3` and `MAX_SOURCE_RATIO_D3`, plus:
 
 - OPERATOR_PK - Private key to send transactions (required)
-- DEPLOYMENTS - Comma-separated list of deployments for which the script needs to be run (required, example: `BSC:CYC,FRAX:FRAX`). See the `config.yml` for all avaiable pairs.
+- DEPLOYMENTS - Comma-separated list of deployments for which the script needs to be run (required, example: `BSC:CYC,FRAX:FRAX`). See the `config.json` for all avaiable pairs.

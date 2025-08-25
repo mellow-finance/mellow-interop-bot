@@ -151,8 +151,8 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv()
 
-    # Read configuration from config.yml
-    config_path = src_path.parent / "config.yml"
+    # Read configuration from config.json
+    config_path = src_path.parent / "config.json"
     config = read_config(str(config_path))
 
     target_rpc = config.target_rpc

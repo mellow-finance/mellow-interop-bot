@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY abi/ ./abi/
 COPY src/ ./src/
-COPY config.yml .
+COPY config.json .
 
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1

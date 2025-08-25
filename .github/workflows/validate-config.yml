@@ -3,7 +3,7 @@ name: Validate Config
 on:
   push:
     paths:
-      - 'config.yml'
+      - 'config.json'
       - 'abi/**'
       - '.github/workflows/validate-config.yml'
 

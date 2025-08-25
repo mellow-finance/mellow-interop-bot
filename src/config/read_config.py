@@ -1,6 +1,6 @@
 import os
 import re
-import yaml
+import json
 from typing import Any, Dict, List
 from dataclasses import dataclass
 
@@ -32,19 +32,19 @@ class Config:
 
 def read_config(config_path: str) -> Config:
     """
-    Read and parse the config.yml file with the following transformations:
+    Read and parse the config.json file with the following transformations:
     1. Convert kebab-case keys to snake_case
     2. Replace ${VAR:default} patterns with environment variables or defaults
 
     Args:
-        config_path: Path to the config.yml file
+        config_path: Path to the config.json file
 
     Returns:
         Config object with parsed and transformed configuration
     """
-    # Read the YAML file
+    # Read the JSON file
     with open(config_path, "r") as file:
-        config = yaml.safe_load(file)
+        config = json.load(file)
 
     # Transform the configuration
     transformed_config = _transform_config(config)

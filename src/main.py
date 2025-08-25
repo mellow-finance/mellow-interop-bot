@@ -1,5 +1,4 @@
 import dotenv
-import yaml
 import os
 import asyncio
 from collections import defaultdict
@@ -27,7 +26,7 @@ async def main():
         dotenv.load_dotenv()
 
         # Read config
-        config = read_config(os.getcwd() + "/config.yml")
+        config = read_config(os.getcwd() + "/config.json")
 
         # Print Telegram info (Bot and group)
         await print_telegram_info(
@@ -48,9 +47,9 @@ async def main():
                 config.telegram_bot_api_key, config.telegram_group_chat_id, message
             )
     except FileNotFoundError:
-        print(f"Error: config.yml not found")
-    except yaml.YAMLError as e:
-        print(f"Error parsing YAML file: {e}")
+        print(f"Error: config.json not found")
+    except Exception as e:
+        print(f"Error parsing JSON file: {e}")
     except Exception as e:
         print(f"Unexpected error: {e}")
 
