@@ -27,7 +27,12 @@
           "source-core": "0x24dD1eaBEad7b3cB07b7d162439ec0A4EEC703DF",
           "target-core": "0x6408a5261578E17f858ADD039dEb72E1952E9Fe9"
         }
-      ]
+      ],
+      "safe-global": {
+        "safe-address": "${FRAX_SAFE_ADDRESS}",
+        "proposer-private-key": "${FRAX_PROPOSER_PK}",
+        "api-url": "${FRAX_SAFE_API_URL:https://safe-gateway.mainnet.frax.com}"
+      }
     },
     {
       "name": "LISK",

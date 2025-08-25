@@ -13,11 +13,19 @@ class Deployment:
 
 
 @dataclass
+class SafeGlobal:
+    safe_address: str
+    proposer_private_key: str
+    api_url: str
+
+
+@dataclass
 class SourceConfig:
     name: str
     rpc: str
     source_core_helper: str
     deployments: List[Deployment]
+    safe_global: SafeGlobal = None
 
 
 @dataclass
@@ -115,11 +123,22 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
             for dep in source_dict["deployments"]
         ]
 
+        # Handle optional safe_global configuration
+        safe_global = None
+        if "safe_global" in source_dict:
+            safe_global_dict = source_dict["safe_global"]
+            safe_global = SafeGlobal(
+                safe_address=safe_global_dict["safe_address"],
+                proposer_private_key=safe_global_dict["proposer_private_key"],
+                api_url=safe_global_dict["api_url"],
+            )
+
         return SourceConfig(
             name=source_dict["name"],
             rpc=source_dict["rpc"],
             source_core_helper=source_dict["source_core_helper"],
             deployments=deployments,
+            safe_global=safe_global,
         )
 
     # Convert all sources

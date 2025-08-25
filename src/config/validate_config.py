@@ -1,20 +1,20 @@
 import sys
 import os
+import re
 
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from web3_scripts.base import *
-    from config.read_config import Config, SourceConfig, Deployment, read_config
+    from config.read_config import Config, SourceConfig, Deployment, read_config, SafeGlobal
 else:
     from web3_scripts.base import *
-    from .read_config import Config, SourceConfig, Deployment
+    from .read_config import Config, SourceConfig, Deployment, SafeGlobal
 
 
 def validate_config(config: Config):
     w3 = get_w3(config.target_rpc)
     validate_rpc_url(w3, "target")
     validate_target_helper(w3, config)
-
     for source in config.sources:
         validate_source(w3, source)
 
@@ -23,7 +23,20 @@ def validate_source(target_w3: Web3, source: SourceConfig):
     w3 = get_w3(source.rpc)
     validate_rpc_url(w3, source.name)
     validate_source_helper(w3, source)
-    validate_deployments(w3, target_w3, source)
+    validate_deployments(w3, target_w3, source) 
+    if source.safe_global:
+        validate_safe_global(w3, source.safe_global)
+
+
+def validate_safe_global(w3: Web3, safe: SafeGlobal):
+    print(f"Validating safe global {safe.safe_address}...")
+    safe_contract = get_contract(w3, safe.safe_address, "Safe")
+    version = safe_contract.functions.VERSION().call()
+    if not re.match(r'^\d+\.\d+\.\d+$', version):
+        raise Exception(f"Invalid safe contract, version is not in the format x.y.z: {version}")
+
+    proposer_address = Account.from_key(safe.proposer_private_key).address
+    print(f"Proposer address: {proposer_address}, version: {version} ✅")
 
 
 def validate_rpc_url(w3: Web3, label: str):
