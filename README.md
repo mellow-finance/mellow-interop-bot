@@ -56,6 +56,12 @@ Optional if `DRY_RUN` is `true`:
     DRY_RUN=true python ./src/main.py
     ```
 
+5. Optionally, run tests:
+
+    ```bash
+    python -m unittest discover -s tests -p "test_*.py" -v
+    ```
+
 ### Running with Docker
 
 1. Build the container:
