@@ -1,13 +1,23 @@
+from re import I
 import sys
 import os
-import re
+from packaging.version import Version
+from urllib.parse import urljoin
 
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from web3_scripts.base import *
-    from config.read_config import Config, SourceConfig, Deployment, read_config, SafeGlobal
+    from safe_global.client_gateway_api import get_client_gateway_version, get_nonce
+    from config.read_config import (
+        Config,
+        SourceConfig,
+        Deployment,
+        read_config,
+        SafeGlobal,
+    )
 else:
     from web3_scripts.base import *
+    from safe_global.client_gateway_api import get_client_gateway_version, get_nonce
     from .read_config import Config, SourceConfig, Deployment, SafeGlobal
 
 
@@ -23,7 +33,7 @@ def validate_source(target_w3: Web3, source: SourceConfig):
     w3 = get_w3(source.rpc)
     validate_rpc_url(w3, source.name)
     validate_source_helper(w3, source)
-    validate_deployments(w3, target_w3, source) 
+    validate_deployments(w3, target_w3, source)
     if source.safe_global:
         validate_safe_global(w3, source.safe_global)
 
@@ -31,12 +41,45 @@ def validate_source(target_w3: Web3, source: SourceConfig):
 def validate_safe_global(w3: Web3, safe: SafeGlobal):
     print(f"Validating safe global {safe.safe_address}...")
     safe_contract = get_contract(w3, safe.safe_address, "Safe")
-    version = safe_contract.functions.VERSION().call()
-    if not re.match(r'^\d+\.\d+\.\d+$', version):
-        raise Exception(f"Invalid safe contract, version is not in the format x.y.z: {version}")
+
+    min_version = Version("1.3.0")
+    version = Version(safe_contract.functions.VERSION().call())
+    if version < min_version:
+        raise Exception(
+            f"Safe contract version {version} is not supported, support for {min_version} or higher is required"
+        )
 
     proposer_address = Account.from_key(safe.proposer_private_key).address
-    print(f"Proposer address: {proposer_address}, version: {version} ✅")
+    nonce = safe_contract.functions.nonce().call()
+    print(f"Proposer address: {proposer_address}, version: {version}, nonce: {nonce}")
+
+    is_client_gateway_api = validate_safe_client_gateway_api_url(w3, safe, nonce)
+    if is_client_gateway_api:
+        # When `safe.api_url` is a url to Client Gateway API, the proposer should be an owner of the safe
+        owners = safe_contract.functions.getOwners().call()
+        if proposer_address not in owners:
+            raise Exception(f"Proposer {proposer_address} is not an owner of the safe")
+    else:
+        # TODO: Implement TX service validation
+        pass
+
+
+def validate_safe_client_gateway_api_url(
+    w3: Web3, safe: SafeGlobal, contract_nonce: int
+) -> bool:
+    chainId = w3.eth.chain_id
+    version = None
+    try:
+        version = get_client_gateway_version(safe.api_url)
+    except Exception as e:
+        return False
+    nonce = get_nonce(safe.api_url, chainId, safe.safe_address)
+    if contract_nonce != nonce:
+        raise Exception(
+            f"Safe contract nonce {contract_nonce} does not match the nonce from client gateway {nonce}"
+        )
+    print(f"Client gateway API URL is valid (version: {version}), nonce is aligned ✅")
+    return True
 
 
 def validate_rpc_url(w3: Web3, label: str):

@@ -2,7 +2,7 @@ import json
 from web3 import Web3
 from web3.contract import Contract
 from eth_account import Account
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 
 
 BLOCK_GAP = 10000
@@ -25,7 +25,7 @@ def print_colored(text: str, color="yellow") -> str:
 
 def get_w3(rpc: str) -> Web3:
     w3 = Web3(Web3.HTTPProvider(rpc))
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     return w3
 
 
