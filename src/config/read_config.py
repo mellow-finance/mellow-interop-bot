@@ -17,6 +17,7 @@ class SafeGlobal:
     safe_address: str
     proposer_private_key: str
     api_url: str
+    api_key: str = None
 
 
 @dataclass
@@ -43,6 +44,7 @@ def read_config(config_path: str) -> Config:
     Read and parse the config.json file with the following transformations:
     1. Convert kebab-case keys to snake_case
     2. Replace ${VAR:default} patterns with environment variables or defaults
+    3. Support nested variable substitution (e.g., ${BSC_SAFE_API_KEY:${SAFE_API_KEY}})
 
     Args:
         config_path: Path to the config.json file
@@ -65,7 +67,7 @@ def _transform_config(obj: Any) -> Any:
     """
     Recursively transform the configuration object:
     - Convert kebab-case keys to snake_case
-    - Replace ${VAR:default} patterns with environment variables
+    - Replace ${VAR:default} patterns with environment variables (supports nested substitution)
     """
     if isinstance(obj, dict):
         transformed = {}
@@ -86,24 +88,85 @@ def _transform_config(obj: Any) -> Any:
         return obj
 
 
-def _substitute_env_vars(value: str) -> str:
+def _substitute_env_vars(value: str, visited_vars: set = None) -> str:
     """
     Replace ${VAR:default} patterns with environment variables or default values.
+    Supports nested variable substitution with circular reference detection.
 
     Examples:
         ${TELEGRAM_BOT_API_KEY} -> os.getenv('TELEGRAM_BOT_API_KEY', '')
         ${TARGET_RPC:https://eth.drpc.org} -> os.getenv('TARGET_RPC', 'https://eth.drpc.org')
+        ${BSC_SAFE_API_KEY:${SAFE_API_KEY}} -> tries BSC_SAFE_API_KEY first, then SAFE_API_KEY
+        ${VAR1:${VAR2:${VAR3:fallback}}} -> tries VAR1, then VAR2, then VAR3, then uses 'fallback'
+
+    Args:
+        value: The string containing variable patterns to substitute
+        visited_vars: Set of variable names being processed (for circular reference detection)
+
+    Returns:
+        String with all variable patterns substituted
+
+    Raises:
+        ValueError: If a circular reference is detected in variable substitution
     """
-    # Pattern to match ${VAR} or ${VAR:default}
-    pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
+    if visited_vars is None:
+        visited_vars = set()
 
-    def replace_match(match):
-        var_name = match.group(1)
-        default_value = match.group(2) if match.group(2) is not None else ""
-        return os.getenv(var_name, default_value)
+    result = value
+    max_iterations = 64
+    iteration = 0
 
-    # Replace all occurrences in the string
-    result = re.sub(pattern, replace_match, value)
+    while iteration < max_iterations:
+        iteration += 1
+        start = result.rfind("${")
+        if start == -1:
+            break  # No more patterns
+
+        # Parse variable name until ':' or '}'
+        name_start = start + 2
+        i = name_start
+        while i < len(result) and result[i] not in ":}":
+            i += 1
+        if i >= len(result):
+            break  # Incomplete pattern; leave as-is
+
+        var_name = result[name_start:i]
+        if not var_name:
+            # Skip malformed and continue searching earlier occurrences
+            result = result[:start] + result[start + 2:]
+            continue
+
+        # Determine default value and closing brace position
+        if result[i] == '}':
+            default_value = ""
+            close = i
+        else:
+            # We started from the last '${', so the next '}' is the matching close
+            default_start = i + 1
+            close = result.find('}', default_start)
+            if close == -1:
+                break  # Unmatched; leave as-is
+            default_value = result[default_start:close]
+
+        if var_name in visited_vars:
+            raise ValueError(f"Circular reference detected in variable substitution: {var_name}")
+
+        env_value = os.getenv(var_name)
+        replacement_source = env_value if env_value is not None else default_value
+
+        # Recursively resolve nested variables in the replacement source
+        new_visited = visited_vars.copy()
+        new_visited.add(var_name)
+        replacement = _substitute_env_vars(replacement_source, new_visited)
+
+        # Splice the resolved value back into the string
+        result = result[:start] + replacement + result[close + 1:]
+
+    if iteration >= max_iterations:
+        raise ValueError(
+            f"Maximum substitution iterations exceeded. Possible complex circular reference in: {value}"
+        )
+
     return result
 
 
@@ -131,6 +194,7 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
                 safe_address=safe_global_dict["safe_address"],
                 proposer_private_key=safe_global_dict["proposer_private_key"],
                 api_url=safe_global_dict["api_url"],
+                api_key=safe_global_dict.get("api_key"),
             )
 
         return SourceConfig(

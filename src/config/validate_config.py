@@ -7,7 +7,11 @@ from urllib.parse import urljoin
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from web3_scripts.base import *
-    from safe_global.client_gateway_api import get_client_gateway_version, get_nonce
+    from safe_global import (
+        get_client_gateway_version,
+        get_nonce,
+        get_transaction_api_version,
+    )
     from config.read_config import (
         Config,
         SourceConfig,
@@ -17,7 +21,11 @@ if __name__ == "__main__":
     )
 else:
     from web3_scripts.base import *
-    from safe_global.client_gateway_api import get_client_gateway_version, get_nonce
+    from safe_global import (
+        get_client_gateway_version,
+        get_nonce,
+        get_transaction_api_version,
+    )
     from .read_config import Config, SourceConfig, Deployment, SafeGlobal
 
 
@@ -53,15 +61,13 @@ def validate_safe_global(w3: Web3, safe: SafeGlobal):
     nonce = safe_contract.functions.nonce().call()
     print(f"Proposer address: {proposer_address}, version: {version}, nonce: {nonce}")
 
-    is_client_gateway_api = validate_safe_client_gateway_api_url(w3, safe, nonce)
-    if is_client_gateway_api:
-        # When `safe.api_url` is a url to Client Gateway API, the proposer should be an owner of the safe
+    if validate_safe_client_gateway_api_url(w3, safe, nonce):
+        # When safe URL is a Client Gateway API, the proposer should be an owner of the safe
         owners = safe_contract.functions.getOwners().call()
         if proposer_address not in owners:
             raise Exception(f"Proposer {proposer_address} is not an owner of the safe")
-    else:
-        # TODO: Implement TX service validation
-        pass
+    elif not validate_safe_transaction_api_url(safe):
+        raise Exception(f"Invalid safe API URL: {safe.api_url}")
 
 
 def validate_safe_client_gateway_api_url(
@@ -79,6 +85,15 @@ def validate_safe_client_gateway_api_url(
             f"Safe contract nonce {contract_nonce} does not match the nonce from client gateway {nonce}"
         )
     print(f"Client gateway API URL is valid (version: {version}), nonce is aligned ✅")
+    return True
+
+
+def validate_safe_transaction_api_url(safe: SafeGlobal):
+    try:
+        version = get_transaction_api_version(safe.api_url, safe.api_key)
+    except Exception:
+        return False
+    print(f"Transaction API URL is valid (version: {version}) ✅")
     return True
 
 

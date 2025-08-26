@@ -15,7 +15,13 @@
           "source-core": "0xc8e046fe778BE29572016d1f703e9B2ff77a207D",
           "target-core": "0xAdEcB7647C3370A40c9F06FB8F5F709c87324932"
         }
-      ]
+      ],
+      "safe-global": {
+        "safe-address": "${BSC_SAFE_ADDRESS:${SAFE_ADDRESS}}",
+        "proposer-private-key": "${BSC_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
+        "api-url": "${BSC_SAFE_API_URL:https://api.safe.global/tx-service/bnb}",
+        "api-key": "${BSC_SAFE_API_KEY:${SAFE_API_KEY}}"
+      }
     },
     {
       "name": "FRAX",
@@ -29,8 +35,8 @@
         }
       ],
       "safe-global": {
-        "safe-address": "${FRAX_SAFE_ADDRESS}",
-        "proposer-private-key": "${FRAX_PROPOSER_PK}",
+        "safe-address": "${FRAX_SAFE_ADDRESS:${SAFE_ADDRESS}}",
+        "proposer-private-key": "${FRAX_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
         "api-url": "${FRAX_SAFE_API_URL:https://safe-gateway.mainnet.frax.com}"
       }
     },

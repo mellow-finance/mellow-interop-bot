@@ -1,1 +1,2 @@
 from .client_gateway_api import get_client_gateway_version, get_nonce
+from .transaction_api import get_transaction_api_version
