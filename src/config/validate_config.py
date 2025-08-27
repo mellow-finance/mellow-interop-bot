@@ -1,32 +1,19 @@
-from re import I
 import sys
 import os
 from packaging.version import Version
-from urllib.parse import urljoin
 
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    from web3_scripts.base import *
-    from safe_global import (
-        get_client_gateway_version,
-        get_nonce,
-        get_transaction_api_version,
-    )
-    from config.read_config import (
-        Config,
-        SourceConfig,
-        Deployment,
-        read_config,
-        SafeGlobal,
-    )
-else:
-    from web3_scripts.base import *
-    from safe_global import (
-        get_client_gateway_version,
-        get_nonce,
-        get_transaction_api_version,
-    )
-    from .read_config import Config, SourceConfig, Deployment, SafeGlobal
+
+from web3_scripts import get_w3, print_colored, get_contract, Account, Web3
+from safe_global import client_gateway_api, transaction_api
+from config import (
+    Config,
+    SourceConfig,
+    Deployment,
+    SafeGlobal,
+    read_config,
+)
 
 
 def validate_config(config: Config):
@@ -76,10 +63,10 @@ def validate_safe_client_gateway_api_url(
     chainId = w3.eth.chain_id
     version = None
     try:
-        version = get_client_gateway_version(safe.api_url)
+        version = client_gateway_api.get_version(safe.api_url)
     except Exception as e:
         return False
-    nonce = get_nonce(safe.api_url, chainId, safe.safe_address)
+    nonce = client_gateway_api.get_nonce(safe.api_url, chainId, safe.safe_address)
     if contract_nonce != nonce:
         raise Exception(
             f"Safe contract nonce {contract_nonce} does not match the nonce from client gateway {nonce}"
@@ -90,7 +77,7 @@ def validate_safe_client_gateway_api_url(
 
 def validate_safe_transaction_api_url(safe: SafeGlobal):
     try:
-        version = get_transaction_api_version(safe.api_url, safe.api_key)
+        version = transaction_api.get_version(safe.api_url, safe.api_key)
     except Exception:
         return False
     print(f"Transaction API URL is valid (version: {version}) ✅")
