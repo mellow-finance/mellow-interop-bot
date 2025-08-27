@@ -209,10 +209,10 @@ def get_queued_transaction(
     transaction = _get_queued_transaction_by_calldata(
         api_url, chain_id, safe_address, safe_version, to, calldata
     )
-    threshold_with_owners = _get_owners_and_threshold(api_url, chain_id, safe_address)
-
     if transaction is None:
-        raise Exception(f"No queued transaction found for calldata: {calldata}")
+        return None
+
+    threshold_with_owners = _get_owners_and_threshold(api_url, chain_id, safe_address)
 
     # Extract transaction data from the client gateway response
     transaction_data = transaction.get("transaction")

@@ -132,18 +132,20 @@ def propose_tx_if_needed(
         return queued_transaction
 
     print(f"Proposing transaction: {safe_tx}...")
-    tx_id = _propose_tx_for_source(safe_tx, source)
-    print_colored(f"Transaction proposed: {tx_id}", "green")
+    tx_hash = _propose_tx_for_source(safe_tx, source)
+    print_colored(f"Transaction proposed: {tx_hash}", "green")
 
     # Transaction might not be immediately created, try getting it again with several attempts
-    attempts = 3
+    attempts = 8
     for attempt in range(attempts):
-        sleep_time = 1 * (2**attempt)
-        time.sleep(sleep_time)
+        time.sleep(attempt + 1)
 
-        print(f"Trying to get transaction: {tx_id}...")
+        print(
+            f"Trying to get transaction: {tx_hash}... (attempt {attempt + 1} of {attempts})"
+        )
         transaction = _get_queued_transaction_for_source(to, calldata, source)
         if transaction:
+            tx_id = f"multisig_{source.safe_global.safe_address}_{tx_hash}"
             if transaction.id != tx_id:
                 raise Exception(
                     f"Transaction ID mismatch: expected {tx_id}, got {transaction.id}"
@@ -155,6 +157,7 @@ def propose_tx_if_needed(
     )
 
 
+# Testing playground
 if __name__ == "__main__":
     import dotenv
     import sys
@@ -173,44 +176,26 @@ if __name__ == "__main__":
     config_path = src_path.parent / "config.json"
     config = read_config(str(config_path))
 
-    # Find for certain source
-    source_name = "BSC"  # "FRAX"
+    to = "0x94928C3853eFEf2759A18eD9d249768Eb260dF8C"
+    method = "setValue"
+    args = [1000000000000000000]
+
+    # ----- BSC
+    source_name = "BSC"
     source = next((s for s in config.sources if s.name == source_name), None)
     if not source:
         raise Exception(f"{source_name} source not found")
     print("--------------------------------")
     print(f"BSC: {source.safe_global.safe_address}")
     print("--------------------------------")
-
-    to = "0x94928C3853eFEf2759A18eD9d249768Eb260dF8C"
-    method = "setValue"
-    args = [1000000000000000000]
     print(propose_tx_if_needed(to, method, args, source))
 
-    # safe_tx = create_signed_safe_tx_for_source(
-    #     source,
-    #     "0x94928C3853eFEf2759A18eD9d249768Eb260dF8C",
-    #     "setValue",
-    #     [1000000000000000000],
-    # )
-    # propose_result = propose_tx_for_source(safe_tx, source)
-    # print(propose_result)
-
     # ----- FRAX
-    source_name = "FRAX"  # "FRAX"
+    source_name = "FRAX"
     source = next((s for s in config.sources if s.name == source_name), None)
     if not source:
         raise Exception(f"{source_name} source not found")
     print("--------------------------------")
     print(f"FRAX: {source.safe_global.safe_address}")
     print("--------------------------------")
-
     print(propose_tx_if_needed(to, method, args, source))
-    # safe_tx = create_signed_safe_tx_for_source(
-    #     source,
-    #     "0x94928C3853eFEf2759A18eD9d249768Eb260dF8C",
-    #     "setValue",
-    #     [1000000000000000000],
-    # )
-    # propose_result = propose_tx_for_source(safe_tx, source)
-    # print(propose_result)

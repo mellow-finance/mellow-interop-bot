@@ -141,10 +141,10 @@ def get_queued_transaction(
     transaction = _get_queued_transaction_by_calldata(
         api_url, api_key, safe_address, safe_nonce, to, calldata
     )
-    threshold_with_owners = _get_owners_and_threshold(api_url, api_key, safe_address)
-
     if transaction is None:
-        raise Exception(f"No queued transaction found for calldata: {calldata}")
+        return None
+
+    threshold_with_owners = _get_owners_and_threshold(api_url, api_key, safe_address)
 
     # Extract confirmed owners from transaction confirmations
     confirmations = [conf["owner"] for conf in transaction.get("confirmations", [])]
