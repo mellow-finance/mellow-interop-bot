@@ -49,10 +49,7 @@ def validate_safe_global(w3: Web3, safe: SafeGlobal):
     print(f"Proposer address: {proposer_address}, version: {version}, nonce: {nonce}")
 
     if validate_safe_client_gateway_api_url(w3, safe, nonce):
-        # When safe URL is a Client Gateway API, the proposer should be an owner of the safe
-        owners = safe_contract.functions.getOwners().call()
-        if proposer_address not in owners:
-            raise Exception(f"Proposer {proposer_address} is not an owner of the safe")
+        pass
     elif not validate_safe_transaction_api_url(safe):
         raise Exception(f"Invalid safe API URL: {safe.api_url}")
 

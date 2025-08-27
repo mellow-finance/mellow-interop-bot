@@ -60,7 +60,12 @@
           "source-core": "0x8cf94b5A37b1835D634b7a3e6b1EE02Ce7F0CD30",
           "target-core": "0xcc1D3926E079c826Cd807FdF825a6777846bb5C1"
         }
-      ]
+      ],
+      "safe-global": {
+        "safe-address": "${LISK_SAFE_ADDRESS:${SAFE_ADDRESS}}",
+        "proposer-private-key": "${LISK_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
+        "api-url": "${LISK_SAFE_API_URL:https://gateway.safe.optimism.io}"
+      }
     }
   ]
 }

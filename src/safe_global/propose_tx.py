@@ -180,22 +180,32 @@ if __name__ == "__main__":
     method = "setValue"
     args = [1000000000000000000]
 
-    # ----- BSC
-    source_name = "BSC"
-    source = next((s for s in config.sources if s.name == source_name), None)
-    if not source:
-        raise Exception(f"{source_name} source not found")
-    print("--------------------------------")
-    print(f"BSC: {source.safe_global.safe_address}")
-    print("--------------------------------")
-    print(propose_tx_if_needed(to, method, args, source))
+    # # ----- LISK
+    # source_name = "LISK"
+    # source = next((s for s in config.sources if s.name == source_name), None)
+    # if not source:
+    #     raise Exception(f"{source_name} source not found")
+    # print("--------------------------------")
+    # print(f"LISK: {source.safe_global.safe_address}")
+    # print("--------------------------------")
+    # print(propose_tx_if_needed(to, method, args, source))
 
-    # ----- FRAX
-    source_name = "FRAX"
-    source = next((s for s in config.sources if s.name == source_name), None)
-    if not source:
-        raise Exception(f"{source_name} source not found")
-    print("--------------------------------")
-    print(f"FRAX: {source.safe_global.safe_address}")
-    print("--------------------------------")
-    print(propose_tx_if_needed(to, method, args, source))
+    # # ----- BSC
+    # source_name = "BSC"
+    # source = next((s for s in config.sources if s.name == source_name), None)
+    # if not source:
+    #     raise Exception(f"{source_name} source not found")
+    # print("--------------------------------")
+    # print(f"BSC: {source.safe_global.safe_address}")
+    # print("--------------------------------")
+    # print(propose_tx_if_needed(to, method, args, source))
+
+    # # ----- FRAX
+    # source_name = "FRAX"
+    # source = next((s for s in config.sources if s.name == source_name), None)
+    # if not source:
+    #     raise Exception(f"{source_name} source not found")
+    # print("--------------------------------")
+    # print(f"FRAX: {source.safe_global.safe_address}")
+    # print("--------------------------------")
+    # print(propose_tx_if_needed(to, method, args, source))
