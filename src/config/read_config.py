@@ -133,23 +133,25 @@ def _substitute_env_vars(value: str, visited_vars: set = None) -> str:
         var_name = result[name_start:i]
         if not var_name:
             # Skip malformed and continue searching earlier occurrences
-            result = result[:start] + result[start + 2:]
+            result = result[:start] + result[start + 2 :]
             continue
 
         # Determine default value and closing brace position
-        if result[i] == '}':
+        if result[i] == "}":
             default_value = ""
             close = i
         else:
             # We started from the last '${', so the next '}' is the matching close
             default_start = i + 1
-            close = result.find('}', default_start)
+            close = result.find("}", default_start)
             if close == -1:
                 break  # Unmatched; leave as-is
             default_value = result[default_start:close]
 
         if var_name in visited_vars:
-            raise ValueError(f"Circular reference detected in variable substitution: {var_name}")
+            raise ValueError(
+                f"Circular reference detected in variable substitution: {var_name}"
+            )
 
         env_value = os.getenv(var_name)
         replacement_source = env_value if env_value is not None else default_value
@@ -160,7 +162,7 @@ def _substitute_env_vars(value: str, visited_vars: set = None) -> str:
         replacement = _substitute_env_vars(replacement_source, new_visited)
 
         # Splice the resolved value back into the string
-        result = result[:start] + replacement + result[close + 1:]
+        result = result[:start] + replacement + result[close + 1 :]
 
     if iteration >= max_iterations:
         raise ValueError(

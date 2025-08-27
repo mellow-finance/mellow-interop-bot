@@ -52,7 +52,7 @@ def propose_safe_tx(api_url: str, api_key: str, safe_tx: SafeTx) -> str:
     return body["contractTransactionHash"]
 
 
-def get_queued_transactions(
+def _get_queued_transactions(
     api_url: str,
     api_key: str,
     safe_address: str,
@@ -81,7 +81,7 @@ def _get_queued_transaction_by_calldata(
     to: str,
     calldata: str,
 ):
-    queued_transactions = get_queued_transactions(
+    queued_transactions = _get_queued_transactions(
         api_url, api_key, safe_address, safe_nonce, to
     )
     for transaction in queued_transactions:

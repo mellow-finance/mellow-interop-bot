@@ -57,10 +57,14 @@ class TestSubstituteEnvVars(unittest.TestCase):
 
     def test_deep_nesting(self):
         with temp_environ({"V3": "v3"}):
-            self.assertEqual(self.rc._substitute_env_vars("${V1:${V2:${V3:fallback}}}"), "v3")
+            self.assertEqual(
+                self.rc._substitute_env_vars("${V1:${V2:${V3:fallback}}}"), "v3"
+            )
 
     def test_hex_addr_with_nested_fallback(self):
-        with temp_environ({"SAFE_ADDRESS": "0x35b9a5EA6D8124FF2B8A72d7f67C6219864F4B5b"}):
+        with temp_environ(
+            {"SAFE_ADDRESS": "0x35b9a5EA6D8124FF2B8A72d7f67C6219864F4B5b"}
+        ):
             result = self.rc._substitute_env_vars("${BSC_SAFE_ADDRESS:${SAFE_ADDRESS}}")
             self.assertEqual(result, "0x35b9a5EA6D8124FF2B8A72d7f67C6219864F4B5b")
 
@@ -85,6 +89,5 @@ class TestSubstituteEnvVars(unittest.TestCase):
             self.assertEqual(self.rc._substitute_env_vars("prefix-${A"), "prefix-${A")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-

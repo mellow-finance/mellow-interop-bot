@@ -77,7 +77,7 @@ def propose_safe_tx(api_url: str, safe_tx: SafeTx) -> str:
     return safe_tx_hash
 
 
-def get_queued_transactions(api_url: str, chainId: int, safe_address: str):
+def _get_queued_transactions(api_url: str, chainId: int, safe_address: str):
     url = urljoin(
         api_url,
         f"/v1/chains/{chainId}/safes/{safe_address}/transactions/queued?trusted=true",
@@ -122,7 +122,7 @@ def _get_queued_transaction_by_calldata(
     to: str,
     calldata: str,
 ):
-    queued_transactions = get_queued_transactions(api_url, chain_id, safe_address)
+    queued_transactions = _get_queued_transactions(api_url, chain_id, safe_address)
     for transaction in queued_transactions:
         data = transaction.get("transaction")
         if data is None:
