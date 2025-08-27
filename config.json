@@ -1,6 +1,7 @@
 {
   "telegram-bot-api-key": "${TELEGRAM_BOT_API_KEY}",
   "telegram-group-chat-id": "${TELEGRAM_GROUP_CHAT_ID}",
+  "telegram-owner-nicknames": "${TELEGRAM_OWNER_NICKNAMES}",
   "oracle-freshness-in-seconds": "${ORACLE_FRESHNESS_IN_SECONDS:3600}",
   "target-rpc": "${TARGET_RPC:https://eth.drpc.org}",
   "target-core-helper": "0x649f34cfdc9bcaea43fe61b17ecfd601b444f45b",
@@ -18,13 +19,15 @@
       ],
       "safe-global": {
         "safe-address": "${BSC_SAFE_ADDRESS:${SAFE_ADDRESS}}",
-        "proposer-private-key": "${BSC_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
+        "proposer-private-key": "${BSC_SAFE_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
         "api-url": "${BSC_SAFE_API_URL:https://api.safe.global/tx-service/bnb}",
-        "api-key": "${BSC_SAFE_API_KEY:${SAFE_API_KEY}}"
+        "api-key": "${BSC_SAFE_API_KEY:${SAFE_API_KEY}}",
+        "web-client-url": "${BSC_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://app.safe.global}}",
+        "eip-3770": "bnb"
       }
     },
     {
-      "name": "FRAX",
+      "name": "FRAXTAL",
       "rpc": "${FRAX_RPC:https://fraxtal.drpc.org}",
       "source-core-helper": "0xDa938653F1F86989d0928CF38000022552f91698",
       "deployments": [
@@ -37,7 +40,8 @@
       "safe-global": {
         "safe-address": "${FRAX_SAFE_ADDRESS:${SAFE_ADDRESS}}",
         "proposer-private-key": "${FRAX_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "${FRAX_SAFE_API_URL:https://safe-gateway.mainnet.frax.com}"
+        "api-url": "${FRAX_SAFE_API_URL:https://safe-gateway.mainnet.frax.com}",
+        "web-client-url": "${FRAX_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://safe.mainnet.frax.com}}"
       }
     },
     {
@@ -64,7 +68,8 @@
       "safe-global": {
         "safe-address": "${LISK_SAFE_ADDRESS:${SAFE_ADDRESS}}",
         "proposer-private-key": "${LISK_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "${LISK_SAFE_API_URL:https://gateway.safe.optimism.io}"
+        "api-url": "${LISK_SAFE_API_URL:https://gateway.safe.optimism.io}",
+        "web-client-url": "${LISK_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://safe.optimism.io}}"
       }
     }
   ]

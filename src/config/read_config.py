@@ -1,6 +1,6 @@
 import os
-import re
 import json
+from web3 import Web3, constants
 from typing import Any, Dict, List
 from dataclasses import dataclass
 
@@ -18,6 +18,8 @@ class SafeGlobal:
     proposer_private_key: str
     api_url: str
     api_key: str = None
+    web_client_url: str = None
+    eip_3770: str = None
 
 
 @dataclass
@@ -33,6 +35,7 @@ class SourceConfig:
 class Config:
     telegram_bot_api_key: str
     telegram_group_chat_id: str
+    telegram_owner_nicknames: Dict[str, str]
     oracle_freshness_in_seconds: int
     target_rpc: str
     target_core_helper: str
@@ -172,6 +175,42 @@ def _substitute_env_vars(value: str, visited_vars: set = None) -> str:
     return result
 
 
+def _parse_telegram_owners(telegram_owner_nicknames: str) -> Dict[str, str]:
+    """
+    Parse telegram owner nicknames string into a dictionary mapping nicknames to addresses.
+
+    Supports two formats:
+    1. Comma-separated nicknames: "@josh,@anna,@dexter"
+    2. Comma-separated nickname:address pairs: "@josh:0x00..000,@anna:0xab..412"
+
+    Args:
+        telegram_owner_nicknames: String containing telegram nicknames
+
+    Returns:
+        Dictionary mapping telegram nicknames to addresses (zero address if not specified)
+    """
+    result = {}
+
+    if not telegram_owner_nicknames:
+        return result
+
+    # Split by comma and process each entry
+    entries = [
+        entry.strip() for entry in telegram_owner_nicknames.split(",") if entry.strip()
+    ]
+
+    for entry in entries:
+        # Check if entry contains address (format: @nickname:0xaddress)
+        if ":" in entry:
+            nickname, address = entry.split(":", 1)
+            result[nickname.strip().lstrip("@")] = address.strip()
+        else:
+            # Format: @nickname (no address specified)
+            result[entry.strip().lstrip("@")] = constants.ADDRESS_ZERO
+
+    return result
+
+
 def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
     """
     Convert a dictionary to a typed Config object.
@@ -192,11 +231,19 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
         safe_global = None
         if "safe_global" in source_dict:
             safe_global_dict = source_dict["safe_global"]
+
+            # Handle eip_3770 fallback: use lowercased source name if not provided
+            eip_3770 = safe_global_dict.get("eip_3770")
+            if eip_3770 is None:
+                eip_3770 = source_dict["name"].lower()
+
             safe_global = SafeGlobal(
                 safe_address=safe_global_dict["safe_address"],
                 proposer_private_key=safe_global_dict["proposer_private_key"],
                 api_url=safe_global_dict["api_url"],
                 api_key=safe_global_dict.get("api_key"),
+                web_client_url=safe_global_dict.get("web_client_url"),
+                eip_3770=eip_3770,
             )
 
         return SourceConfig(
@@ -213,6 +260,9 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
     return Config(
         telegram_bot_api_key=config_dict["telegram_bot_api_key"],
         telegram_group_chat_id=config_dict["telegram_group_chat_id"],
+        telegram_owner_nicknames=_parse_telegram_owners(
+            config_dict["telegram_owner_nicknames"]
+        ),
         oracle_freshness_in_seconds=int(config_dict["oracle_freshness_in_seconds"]),
         target_rpc=config_dict["target_rpc"],
         target_core_helper=config_dict["target_core_helper"],

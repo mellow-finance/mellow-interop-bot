@@ -1,6 +1,7 @@
 import sys
 import os
 from packaging.version import Version
+from web3 import constants
 
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -44,7 +45,11 @@ def validate_safe_global(w3: Web3, safe: SafeGlobal):
             f"Safe contract version {version} is not supported, support for {min_version} or higher is required"
         )
 
-    proposer_address = Account.from_key(safe.proposer_private_key).address
+    if safe.proposer_private_key:
+        proposer_address = Account.from_key(safe.proposer_private_key).address
+    else:
+        proposer_address = "N/A"
+
     nonce = safe_contract.functions.nonce().call()
     print(f"Proposer address: {proposer_address}, version: {version}, nonce: {nonce}")
 
@@ -52,6 +57,29 @@ def validate_safe_global(w3: Web3, safe: SafeGlobal):
         pass
     elif not validate_safe_transaction_api_url(safe):
         raise Exception(f"Invalid safe API URL: {safe.api_url}")
+
+
+def validate_safe_owner_addresses(config: Config):
+    owners = config.telegram_owner_nicknames
+    if len(owners) == 0:
+        print("No telegram nicknames for safe owners are set, skipping validation...")
+        return
+
+    all_zero = True
+    all_non_zero = True
+    for nickname, address in owners.items():
+        if not address.startswith("0x") or not Web3.is_address(address):
+            raise ValueError(f"Invalid address for nickname {nickname}!")
+        if address != constants.ADDRESS_ZERO:
+            all_zero = False
+        else:
+            all_non_zero = False
+
+    if not all_zero and not all_non_zero:
+        raise ValueError("All addresses must be set or all must be omitted!")
+
+    if all_non_zero and len(owners) != len(set(owners.values())):
+        raise ValueError("Duplicate owner addresses found!")
 
 
 def validate_safe_client_gateway_api_url(
@@ -73,6 +101,9 @@ def validate_safe_client_gateway_api_url(
 
 
 def validate_safe_transaction_api_url(safe: SafeGlobal):
+    if not safe.api_key:
+        print("No API key for safe transaction API is set, skipping validation...")
+        return True
     try:
         version = transaction_api.get_version(safe.api_url, safe.api_key)
     except Exception:
