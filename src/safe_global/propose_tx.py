@@ -7,10 +7,18 @@ from safe_eth.eth import EthereumClient
 
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    import client_gateway_api
+    import transaction_api
+    from multi_send_call import encode_multi, resolve_multi_send_contract
+    from common import PendingTransactionInfo
+    
+else:
+    from . import client_gateway_api, transaction_api
+    from .multi_send_call import encode_multi, resolve_multi_send_contract
+    from .common import PendingTransactionInfo
 
 from web3_scripts import get_contract, print_colored, get_w3
 from config import SourceConfig, SafeGlobal
-from safe_global import client_gateway_api, transaction_api, PendingTransactionInfo
 
 
 def _create_calldata(method: str, args: list) -> str:
@@ -20,7 +28,12 @@ def _create_calldata(method: str, args: list) -> str:
 
 
 def _create_signed_safe_tx(
-    rpc_url: str, safe_address: str, private_key: str, to: str, calldata: str
+    rpc_url: str,
+    safe_address: str,
+    private_key: str,
+    to: str,
+    calldata: str,
+    operation: int,
 ) -> SafeTx:
     safe_tx = SafeTx(
         ethereum_client=EthereumClient(rpc_url),
@@ -28,7 +41,7 @@ def _create_signed_safe_tx(
         to=to,
         value=0,
         data=calldata,
-        operation=0,
+        operation=operation,
         safe_tx_gas=0,
         base_gas=0,
         gas_price=0,
@@ -40,7 +53,7 @@ def _create_signed_safe_tx(
 
 
 def _create_signed_safe_tx_for_source(
-    source: SourceConfig, to: str, calldata: str
+    source: SourceConfig, to: str, calldata: str, operation: int
 ) -> SafeTx:
     safe_tx = _create_signed_safe_tx(
         source.rpc,
@@ -48,6 +61,7 @@ def _create_signed_safe_tx_for_source(
         source.safe_global.proposer_private_key,
         to,
         calldata,
+        operation,
     )
     return safe_tx
 
@@ -115,13 +129,32 @@ def _get_queued_transaction_for_source(
 
 
 def propose_tx_if_needed(
-    to: str, method: str, args: list, source: SourceConfig
+    method: str, calls: list[tuple[str, list]], source: SourceConfig
 ) -> PendingTransactionInfo:
     print(
-        f"Starting proposing transaction... source: '{source.name}', to: '{to}', method: '{method}', args: {args}..."
+        f"Starting proposing transaction... source: '{source.name}', method: '{method}', calls: {calls}..."
     )
-    calldata = _create_calldata(method, args)
-    safe_tx = _create_signed_safe_tx_for_source(source, to, calldata)
+
+    multi_send = len(calls) > 1
+    if multi_send:
+        to = resolve_multi_send_contract(source.rpc, source.safe_global.safe_address)
+        calls_with_calldata = [
+            (to, _create_calldata(method, args)) for to, args in calls
+        ]
+        calldata = encode_multi(calls_with_calldata)
+        operation = 1 # delegatecall
+        print(
+            f"Going to propose multi-send transaction to multi-send contract {to} with calldata: {calldata}..."
+        )
+    else:
+        to, args = calls[0]
+        calldata = _create_calldata(method, args)
+        operation = 0 # call
+        print(
+            f"Going to propose single transaction to {to} with args: {args} (calldata: {calldata})..."
+        )
+
+    safe_tx = _create_signed_safe_tx_for_source(source, to, calldata, operation)
 
     print(f"Trying to find existing transaction...")
     queued_transaction = _get_queued_transaction_for_source(to, calldata, source)
@@ -176,19 +209,33 @@ if __name__ == "__main__":
     config_path = src_path.parent / "config.json"
     config = read_config(str(config_path))
 
-    to = "0x94928C3853eFEf2759A18eD9d249768Eb260dF8C"
     method = "setValue"
     args = [1000000000000000000]
 
-    # # ----- LISK
-    # source_name = "LISK"
-    # source = next((s for s in config.sources if s.name == source_name), None)
-    # if not source:
-    #     raise Exception(f"{source_name} source not found")
-    # print("--------------------------------")
-    # print(f"LISK: {source.safe_global.safe_address}")
-    # print("--------------------------------")
-    # print(propose_tx_if_needed(to, method, args, source))
+    calls = [
+        (
+            "0x83D65E663B48bd19488a3AB9996175805760dcbF",
+            args,
+        ),
+        (
+            "0xfEf5CE93C866A64B65A553eFE973dd228f44afdC",
+            args,
+        ),
+        (
+            "0xFe5EA142755e82a5364cBC1F7cF4b10c7D929EC2",
+            args,
+        ),
+    ]
+
+    # ----- LISK
+    source_name = "LISK"
+    source = next((s for s in config.sources if s.name == source_name), None)
+    if not source:
+        raise Exception(f"{source_name} source not found")
+    print("--------------------------------")
+    print(f"LISK: {source.safe_global.safe_address}")
+    print("--------------------------------")
+    print(propose_tx_if_needed(method, args, source))
 
     # # ----- BSC
     # source_name = "BSC"
@@ -201,7 +248,7 @@ if __name__ == "__main__":
     # print(propose_tx_if_needed(to, method, args, source))
 
     # # ----- FRAX
-    # source_name = "FRAX"
+    # source_name = "FRAXTAL"
     # source = next((s for s in config.sources if s.name == source_name), None)
     # if not source:
     #     raise Exception(f"{source_name} source not found")
