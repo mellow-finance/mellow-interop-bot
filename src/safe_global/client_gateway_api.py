@@ -92,7 +92,7 @@ def _get_queued_transactions(api_url: str, chainId: int, safe_address: str):
 
 
 def _build_safe_tx_hash(
-    safe_address: str, chainId: int, nonce: int, to: str, calldata: str, version: str
+    safe_address: str, chainId: int, nonce: int, to: str, calldata: str, version: str, operation: int
 ) -> SafeTx:
     """Internal helper to regenerate a safe tx hash from the calldata."""
     safe_tx = SafeTx(
@@ -101,7 +101,7 @@ def _build_safe_tx_hash(
         to=to,
         value=0,
         data=calldata,
-        operation=0,
+        operation=operation,
         safe_tx_gas=0,
         base_gas=0,
         gas_price=0,
@@ -146,11 +146,20 @@ def _get_queued_transaction_by_calldata(
                 f"Cannot get nonce from execution info: {data.get('executionInfo')}"
             )
 
+        # Check if the transaction we are looking for is a single transaction
         safe_tx_hash = _build_safe_tx_hash(
-            safe_address, chain_id, nonce, to, calldata, safe_version
+            safe_address, chain_id, nonce, to, calldata, safe_version, 0 # 0 = call
         )
         if queued_safe_tx_hash == safe_tx_hash:
             return transaction
+
+        # Check if the transaction we are looking for is a multi-send transaction
+        multi_send_safe_tx_hash = _build_safe_tx_hash(
+            safe_address, chain_id, nonce, to, calldata, safe_version, 1 # 1 = delegatecall
+        )
+        if queued_safe_tx_hash == multi_send_safe_tx_hash:
+            return transaction
+
     return None
 
 

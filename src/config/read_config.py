@@ -1,18 +1,18 @@
 import os
 import json
 from web3 import Web3, constants
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Deployment:
     name: str
     source_core: str
     target_core: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class SafeGlobal:
     safe_address: str
     proposer_private_key: str
@@ -22,12 +22,12 @@ class SafeGlobal:
     eip_3770: str = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class SourceConfig:
     name: str
     rpc: str
     source_core_helper: str
-    deployments: List[Deployment]
+    deployments: Tuple[Deployment, ...]  # Changed from List to tuple for hashability
     safe_global: SafeGlobal = None
 
 
@@ -218,14 +218,14 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
 
     # Convert source configurations
     def create_source_config(source_dict: Dict[str, Any]) -> SourceConfig:
-        deployments = [
+        deployments = tuple(
             Deployment(
                 name=dep["name"],
                 source_core=dep["source_core"],
                 target_core=dep["target_core"],
             )
             for dep in source_dict["deployments"]
-        ]
+        )
 
         # Handle optional safe_global configuration
         safe_global = None

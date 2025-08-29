@@ -21,8 +21,8 @@ from web3_scripts import get_contract, print_colored, get_w3
 from config import SourceConfig, SafeGlobal
 
 
-def _create_calldata(method: str, args: list) -> str:
-    contract = get_contract(Web3(), address=constants.ADDRESS_ZERO, name="Oracle")
+def _create_calldata(contract_name: str, method: str, args: list) -> str:
+    contract = get_contract(Web3(), address=constants.ADDRESS_ZERO, name=contract_name)
     calldata = contract.encode_abi(method, args)
     return calldata
 
@@ -129,17 +129,17 @@ def _get_queued_transaction_for_source(
 
 
 def propose_tx_if_needed(
-    method: str, calls: list[tuple[str, list]], source: SourceConfig
+    contract_name: str, method: str, calls: list[tuple[str, list]], source: SourceConfig
 ) -> PendingTransactionInfo:
     print(
-        f"Starting proposing transaction... source: '{source.name}', method: '{method}', calls: {calls}..."
+        f"Starting proposing transaction... source: '{source.name}', contract: '{contract_name}', method: '{method}', calls: {calls}..."
     )
 
     multi_send = len(calls) > 1
     if multi_send:
         to = resolve_multi_send_contract(source.rpc, source.safe_global.safe_address)
         calls_with_calldata = [
-            (to, _create_calldata(method, args)) for to, args in calls
+            (to, _create_calldata(contract_name, method, args)) for to, args in calls
         ]
         calldata = encode_multi(calls_with_calldata)
         operation = 1 # delegatecall
@@ -148,7 +148,7 @@ def propose_tx_if_needed(
         )
     else:
         to, args = calls[0]
-        calldata = _create_calldata(method, args)
+        calldata = _create_calldata(contract_name, method, args)
         operation = 0 # call
         print(
             f"Going to propose single transaction to {to} with args: {args} (calldata: {calldata})..."
@@ -186,7 +186,7 @@ def propose_tx_if_needed(
             return transaction
 
     raise Exception(
-        f"Transaction not found after {attempts} attempts. Expected transaction ID: {tx_id}"
+        f"Transaction not found after {attempts} attempts. Expected transaction hash: {tx_hash}"
     )
 
 
@@ -212,42 +212,74 @@ if __name__ == "__main__":
     method = "setValue"
     args = [1000000000000000000]
 
-    calls = [
-        (
-            "0x83D65E663B48bd19488a3AB9996175805760dcbF",
-            args,
-        ),
-        (
-            "0xfEf5CE93C866A64B65A553eFE973dd228f44afdC",
-            args,
-        ),
-        (
-            "0xFe5EA142755e82a5364cBC1F7cF4b10c7D929EC2",
-            args,
-        ),
-    ]
 
     # ----- LISK
-    source_name = "LISK"
-    source = next((s for s in config.sources if s.name == source_name), None)
-    if not source:
-        raise Exception(f"{source_name} source not found")
-    print("--------------------------------")
-    print(f"LISK: {source.safe_global.safe_address}")
-    print("--------------------------------")
-    print(propose_tx_if_needed(method, args, source))
-
-    # # ----- BSC
-    # source_name = "BSC"
+    # calls = [
+    #     (
+    #         "0x83D65E663B48bd19488a3AB9996175805760dcbF",
+    #         args,
+    #     ),
+    #     (
+    #         "0xfEf5CE93C866A64B65A553eFE973dd228f44afdC",
+    #         args,
+    #     ),
+    #     (
+    #         "0xFe5EA142755e82a5364cBC1F7cF4b10c7D929EC2",
+    #         args,
+    #     ),
+    # ]
+    # source_name = "LISK"
     # source = next((s for s in config.sources if s.name == source_name), None)
     # if not source:
     #     raise Exception(f"{source_name} source not found")
     # print("--------------------------------")
-    # print(f"BSC: {source.safe_global.safe_address}")
+    # print(f"LISK: {source.safe_global.safe_address}")
     # print("--------------------------------")
-    # print(propose_tx_if_needed(to, method, args, source))
+    # print(propose_tx_if_needed(method, args, source))
+
+    # # ----- BSC
+    method = "approve"
+    args = ['0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e', 12]
+    calls = [
+        (
+            "0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e",
+            args,
+        ),
+        # (
+        #     "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+        #     args,
+        # ),
+        # (
+        #     "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+        #     args,
+        # ),
+    ]
+    source_name = "BSC"
+    source = next((s for s in config.sources if s.name == source_name), None)
+    if not source:
+        raise Exception(f"{source_name} source not found")
+    print("--------------------------------")
+    print(f"BSC: {source.safe_global.safe_address}")
+    print("--------------------------------")
+    print(propose_tx_if_needed("SourceCore", method, calls, source))
 
     # # ----- FRAX
+    # method = "approve"
+    # args = ['0x35b9a5EA6D8124FF2B8A72d7f67C6219864F4B5b', 10]
+    # calls = [
+    #     (
+    #         "0xfc00000000000000000000000000000000000001",
+    #         args,
+    #     ),
+    #     # (
+    #     #     "0xfc00000000000000000000000000000000000008",
+    #     #     args,
+    #     # ),
+    #     # (
+    #     #     "0xfc00000000000000000000000000000000000006",
+    #     #     args,
+    #     # ),
+    # ]
     # source_name = "FRAXTAL"
     # source = next((s for s in config.sources if s.name == source_name), None)
     # if not source:
@@ -255,4 +287,4 @@ if __name__ == "__main__":
     # print("--------------------------------")
     # print(f"FRAX: {source.safe_global.safe_address}")
     # print("--------------------------------")
-    # print(propose_tx_if_needed(to, method, args, source))
+    # print(propose_tx_if_needed("SourceCore", method, calls, source))
