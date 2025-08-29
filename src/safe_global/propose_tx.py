@@ -1,21 +1,11 @@
-import sys
-import os
 import time
 from web3 import Web3, constants
 from safe_eth.safe import SafeTx
 from safe_eth.eth import EthereumClient
 
-if __name__ == "__main__":
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    import client_gateway_api
-    import transaction_api
-    from multi_send_call import encode_multi, resolve_multi_send_contract
-    from common import PendingTransactionInfo
-
-else:
-    from . import client_gateway_api, transaction_api
-    from .multi_send_call import encode_multi, resolve_multi_send_contract
-    from .common import PendingTransactionInfo
+from . import client_gateway_api, transaction_api
+from .multi_send_call import encode_multi, resolve_multi_send_contract
+from .common import PendingTransactionInfo
 
 from web3_scripts import get_contract, print_colored, get_w3
 from config import SourceConfig, SafeGlobal
@@ -188,102 +178,3 @@ def propose_tx_if_needed(
     raise Exception(
         f"Transaction not found after {attempts} attempts. Expected transaction hash: {tx_hash}"
     )
-
-
-# Testing playground
-if __name__ == "__main__":
-    import dotenv
-    import sys
-    from pathlib import Path
-
-    # Add src directory to path to import config module
-    src_path = Path(__file__).parent.parent
-    sys.path.insert(0, str(src_path))
-
-    from config.read_config import read_config
-    from web3_scripts.base import get_w3
-
-    dotenv.load_dotenv()
-
-    # Read configuration from config.json
-    config_path = src_path.parent / "config.json"
-    config = read_config(str(config_path))
-
-    method = "setValue"
-    args = [1000000000000000000]
-
-    # ----- LISK
-    # calls = [
-    #     (
-    #         "0x83D65E663B48bd19488a3AB9996175805760dcbF",
-    #         args,
-    #     ),
-    #     (
-    #         "0xfEf5CE93C866A64B65A553eFE973dd228f44afdC",
-    #         args,
-    #     ),
-    #     (
-    #         "0xFe5EA142755e82a5364cBC1F7cF4b10c7D929EC2",
-    #         args,
-    #     ),
-    # ]
-    # source_name = "LISK"
-    # source = next((s for s in config.sources if s.name == source_name), None)
-    # if not source:
-    #     raise Exception(f"{source_name} source not found")
-    # print("--------------------------------")
-    # print(f"LISK: {source.safe_global.safe_address}")
-    # print("--------------------------------")
-    # print(propose_tx_if_needed(method, args, source))
-
-    # # ----- BSC
-    method = "approve"
-    args = ["0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e", 12]
-    calls = [
-        (
-            "0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e",
-            args,
-        ),
-        # (
-        #     "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
-        #     args,
-        # ),
-        # (
-        #     "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-        #     args,
-        # ),
-    ]
-    source_name = "BSC"
-    source = next((s for s in config.sources if s.name == source_name), None)
-    if not source:
-        raise Exception(f"{source_name} source not found")
-    print("--------------------------------")
-    print(f"BSC: {source.safe_global.safe_address}")
-    print("--------------------------------")
-    print(propose_tx_if_needed("SourceCore", method, calls, source))
-
-    # # ----- FRAX
-    # method = "approve"
-    # args = ['0x35b9a5EA6D8124FF2B8A72d7f67C6219864F4B5b', 10]
-    # calls = [
-    #     (
-    #         "0xfc00000000000000000000000000000000000001",
-    #         args,
-    #     ),
-    #     # (
-    #     #     "0xfc00000000000000000000000000000000000008",
-    #     #     args,
-    #     # ),
-    #     # (
-    #     #     "0xfc00000000000000000000000000000000000006",
-    #     #     args,
-    #     # ),
-    # ]
-    # source_name = "FRAXTAL"
-    # source = next((s for s in config.sources if s.name == source_name), None)
-    # if not source:
-    #     raise Exception(f"{source_name} source not found")
-    # print("--------------------------------")
-    # print(f"FRAX: {source.safe_global.safe_address}")
-    # print("--------------------------------")
-    # print(propose_tx_if_needed("SourceCore", method, calls, source))
