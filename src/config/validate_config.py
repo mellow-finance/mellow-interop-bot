@@ -8,6 +8,7 @@ if __name__ == "__main__":
 
 from web3_scripts import get_w3, print_colored, get_contract, Account, Web3
 from safe_global import client_gateway_api, transaction_api
+from safe_global.multi_send_call import multi_send_contracts
 from config import (
     Config,
     SourceConfig,
@@ -53,6 +54,9 @@ def validate_safe_global(w3: Web3, safe: SafeGlobal):
     nonce = safe_contract.functions.nonce().call()
     print(f"Proposer address: {proposer_address}, version: {version}, nonce: {nonce}")
 
+    # Validate multi-send contract compatibility
+    validate_multi_send_contract_compatibility(w3, safe)
+
     if validate_safe_client_gateway_api_url(w3, safe, nonce):
         pass
     elif not validate_safe_transaction_api_url(safe):
@@ -80,6 +84,47 @@ def validate_safe_owner_addresses(config: Config):
 
     if all_non_zero and len(owners) != len(set(owners.values())):
         raise ValueError("Duplicate owner addresses found!")
+
+
+def validate_multi_send_contract_compatibility(w3: Web3, safe: SafeGlobal):
+    print(
+        f"Validating multi-send contract compatibility for safe {safe.safe_address}..."
+    )
+
+    safe_contract = get_contract(w3, safe.safe_address, "Safe")
+    version_str = safe_contract.functions.VERSION().call()
+    version = Version(version_str)
+
+    base_version = version.base_version
+    if base_version not in multi_send_contracts:
+        supported_versions = ", ".join(multi_send_contracts.keys())
+        raise Exception(
+            f"Safe contract version {base_version} is not supported by multi-send contracts. "
+            f"Supported versions: {supported_versions}"
+        )
+
+    multi_send_address = multi_send_contracts[base_version]
+    # Check that the contract is deployed on the current network
+    code = w3.eth.get_code(Web3.to_checksum_address(multi_send_address))
+    bytecode = code.hex()
+    if not bytecode or bytecode == "0x":
+        raise Exception(
+            f"Multi-send contract {multi_send_address} (version {base_version}) "
+            f"is not deployed on the current network (chain ID: {w3.eth.chain_id})"
+        )
+
+    # Validate bytecode contains `multiSend` function selector
+    MULTISEND_FUNCTION_SELECTOR = "8d80ff0a"  # multiSend(bytes)
+    clean_bytecode = bytecode.lower().replace("0x", "")
+    if MULTISEND_FUNCTION_SELECTOR not in clean_bytecode:
+        raise Exception(
+            f"Multi-send contract {multi_send_address} (version {base_version}) "
+            f"does not contain multiSend function (selector: {MULTISEND_FUNCTION_SELECTOR})"
+        )
+
+    print(
+        f"Multi-send contract compatibility validated ✅ (version: {base_version}, address: {multi_send_address})"
+    )
 
 
 def validate_safe_client_gateway_api_url(

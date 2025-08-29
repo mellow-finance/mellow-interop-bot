@@ -12,12 +12,9 @@ from web3_scripts import get_contract, get_w3
 # Multi-send contract addresses for different versions
 # https://docs.safe.global/advanced/smart-account-supported-networks?expand=1&page=2
 multi_send_contracts = {
-    "1.5.0": ["0xA83c336B20401Af773B6219BA5027174338D1836"],
-    "1.4.1": ["0x9641d764fc13c8B624c04430C7356C1C7C8102e2"],
-    "1.3.0": [
-        "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
-        "0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B",
-    ],
+    "1.5.0": "0xA83c336B20401Af773B6219BA5027174338D1836",
+    "1.4.1": "0x9641d764fc13c8B624c04430C7356C1C7C8102e2",
+    "1.3.0": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
 }
 
 
@@ -66,7 +63,7 @@ def resolve_multi_send_contract(rpc_url: str, safe_address: str) -> str:
     w3 = get_w3(rpc_url)
     contract = get_contract(w3, address=safe_address, name="Safe")
     version = contract.functions.VERSION().call()
-    contract_address = multi_send_contracts.get(version, [None])[0]
+    contract_address = multi_send_contracts.get(version)
     if contract_address is None:
         raise ValueError(f"No multi-send contract found for version {version}")
     return contract_address
