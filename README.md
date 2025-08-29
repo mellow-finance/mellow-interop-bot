@@ -4,7 +4,7 @@ A cross-chain oracle monitoring and validation bot that tracks oracle states acr
 
 ## Prerequisites
 
-- Python 3.11+ (or Docker)
+- Python 3.13+ (or Docker)
 - Access to blockchain RPC endpoints
 - Telegram Bot API key (Optional)
 - Smart contract addresses for monitoring
@@ -24,6 +24,22 @@ Optional if `DRY_RUN` is `true`:
 
 - `TELEGRAM_BOT_API_KEY` - Your Telegram bot API key
 - `TELEGRAM_GROUP_CHAT_ID` - Target Telegram group chat ID
+
+#### Safe Global Variables
+
+The bot uses Safe Global for proposing multi-signature transactions. You can configure these globally or per-chain:
+
+**Global Safe Variables (fallback for all chains):**
+
+- `SAFE_ADDRESS` - Safe wallet address for transaction proposals.
+- `SAFE_PROPOSER_PK` - Private key of the Safe proposer/signer.
+- `SAFE_API_URL` - API URL (Transaction service API or Client Gateway API).
+- `SAFE_API_KEY` - Safe Global API key for transaction service access.
+- `SAFE_WEB_CLIENT_URL` - Safe web client URL (default: `https://app.safe.global`).
+
+There are some chain-specific variables, like: `BSC_SAFE_ADDRESS`, `FRAX_SAFE_WEB_CLIENT_URL` etc., see `config.json`.
+
+> Chain-specific variables take precedence over global variables. If not set, the system falls back to the global `SAFE_*` variables.
 
 ## Usage
 

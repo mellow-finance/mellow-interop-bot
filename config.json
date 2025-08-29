@@ -20,7 +20,7 @@
       "safe-global": {
         "safe-address": "${BSC_SAFE_ADDRESS:${SAFE_ADDRESS}}",
         "proposer-private-key": "${BSC_SAFE_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "${BSC_SAFE_API_URL:https://api.safe.global/tx-service/bnb}",
+        "api-url": "${BSC_SAFE_API_URL:${SAFE_API_URL:https://api.safe.global/tx-service/bnb}}",
         "api-key": "${BSC_SAFE_API_KEY:${SAFE_API_KEY}}",
         "web-client-url": "${BSC_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://app.safe.global}}",
         "eip-3770": "bnb"

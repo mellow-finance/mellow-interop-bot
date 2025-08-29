@@ -31,11 +31,19 @@ def validate_source(target_w3: Web3, source: SourceConfig):
     validate_rpc_url(w3, source.name)
     validate_source_helper(w3, source)
     validate_deployments(w3, target_w3, source)
-    if source.safe_global:
-        validate_safe_global(w3, source.safe_global)
+    validate_safe_global(w3, source)
 
 
-def validate_safe_global(w3: Web3, safe: SafeGlobal):
+def validate_safe_global(w3: Web3, source: SourceConfig):
+    safe = source.safe_global
+    if not safe:
+        print(f"No safe global config is set for {source.name}, skipping validation...")
+        return
+
+    if not safe.safe_address:
+        print(f"No safe address is set for {source.name}, skipping validation...")
+        return
+
     print(f"Validating safe global {safe.safe_address}...")
     safe_contract = get_contract(w3, safe.safe_address, "Safe")
 
