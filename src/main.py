@@ -77,7 +77,7 @@ async def main():
                 await send_message(
                     config.telegram_bot_api_key, config.telegram_group_chat_id, message
                 )
-        print(f"Sent {len(safe_proposals)} messages with safe proposals")
+        print(f"Sent {len(safe_proposals)} message(s) with safe proposal")
     except FileNotFoundError:
         print(f"Error: config.json not found")
     except Exception as e:
@@ -223,6 +223,10 @@ def propose_tx_to_update_oracle(
     for source, oracle_data_list in grouped_data.items():
         safe_global = source.safe_global
         if safe_global is None:
+            continue
+
+        if not source.safe_global.proposer_private_key:
+            print(f"Skipping proposal for {source.name} because proposer pk is not set")
             continue
 
         contract_abi = "Oracle"
