@@ -27,7 +27,11 @@ jobs:
     
     - name: Validate configuration
       env:
-        SAFE_ADDRESS: ${{ env.SAFE_ADDRESS }}
-        FRAX_SAFE_ADDRESS: ${{ env.FRAX_SAFE_ADDRESS }}
-        LISK_SAFE_ADDRESS: ${{ env.LISK_SAFE_ADDRESS }}
-      run: python ./src/config/validate_config.py
+        SAFE_ADDRESS: ${{ vars.SAFE_ADDRESS }}
+        FRAX_SAFE_ADDRESS: ${{ vars.FRAX_SAFE_ADDRESS }}
+        LISK_SAFE_ADDRESS: ${{ vars.LISK_SAFE_ADDRESS }}
+      run: |
+        echo "SAFE_ADDRESS=$SAFE_ADDRESS"
+        echo "FRAX_SAFE_ADDRESS=$FRAX_SAFE_ADDRESS"
+        echo "LISK_SAFE_ADDRESS=$LISK_SAFE_ADDRESS"
+        python ./src/config/validate_config.py
