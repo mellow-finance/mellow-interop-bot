@@ -92,7 +92,13 @@ def _get_queued_transactions(api_url: str, chainId: int, safe_address: str):
 
 
 def _build_safe_tx_hash(
-    safe_address: str, chainId: int, nonce: int, to: str, calldata: str, version: str, operation: int
+    safe_address: str,
+    chainId: int,
+    nonce: int,
+    to: str,
+    calldata: str,
+    version: str,
+    operation: int,
 ) -> SafeTx:
     """Internal helper to regenerate a safe tx hash from the calldata."""
     safe_tx = SafeTx(
@@ -148,14 +154,20 @@ def _get_queued_transaction_by_calldata(
 
         # Check if the transaction we are looking for is a single transaction
         safe_tx_hash = _build_safe_tx_hash(
-            safe_address, chain_id, nonce, to, calldata, safe_version, 0 # 0 = call
+            safe_address, chain_id, nonce, to, calldata, safe_version, 0  # 0 = call
         )
         if queued_safe_tx_hash == safe_tx_hash:
             return transaction
 
         # Check if the transaction we are looking for is a multi-send transaction
         multi_send_safe_tx_hash = _build_safe_tx_hash(
-            safe_address, chain_id, nonce, to, calldata, safe_version, 1 # 1 = delegatecall
+            safe_address,
+            chain_id,
+            nonce,
+            to,
+            calldata,
+            safe_version,
+            1,  # 1 = delegatecall
         )
         if queued_safe_tx_hash == multi_send_safe_tx_hash:
             return transaction

@@ -203,7 +203,10 @@ def compose_owner_mentions(
 def compose_safe_tx_confirmations(proposal: SafeProposal) -> tuple[str, bool]:
     confirmations = len(proposal.transaction.confirmations)
     required_confirmations = proposal.transaction.number_of_required_confirmations
-    return f"Confirmations: {confirmations}/{required_confirmations}", confirmations >= required_confirmations
+    return (
+        f"Confirmations: {confirmations}/{required_confirmations}",
+        confirmations >= required_confirmations,
+    )
 
 
 def propose_tx_to_update_oracle(

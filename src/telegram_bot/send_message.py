@@ -20,6 +20,9 @@ async def send_message(bot_api_key: str, group_chat_id: str, message: str) -> Me
 
     bot = Bot(token=bot_api_key)
     message = await bot.send_message(
-        chat_id=group_chat_id, text=message, parse_mode=constants.ParseMode.MARKDOWN, disable_web_page_preview=True
+        chat_id=group_chat_id,
+        text=message,
+        parse_mode=constants.ParseMode.MARKDOWN,
+        disable_web_page_preview=True,
     )
     return message

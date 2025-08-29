@@ -11,7 +11,7 @@ if __name__ == "__main__":
     import transaction_api
     from multi_send_call import encode_multi, resolve_multi_send_contract
     from common import PendingTransactionInfo
-    
+
 else:
     from . import client_gateway_api, transaction_api
     from .multi_send_call import encode_multi, resolve_multi_send_contract
@@ -142,14 +142,14 @@ def propose_tx_if_needed(
             (to, _create_calldata(contract_name, method, args)) for to, args in calls
         ]
         calldata = encode_multi(calls_with_calldata)
-        operation = 1 # delegatecall
+        operation = 1  # delegatecall
         print(
             f"Going to propose multi-send transaction to multi-send contract {to} with calldata: {calldata}..."
         )
     else:
         to, args = calls[0]
         calldata = _create_calldata(contract_name, method, args)
-        operation = 0 # call
+        operation = 0  # call
         print(
             f"Going to propose single transaction to {to} with args: {args} (calldata: {calldata})..."
         )
@@ -212,7 +212,6 @@ if __name__ == "__main__":
     method = "setValue"
     args = [1000000000000000000]
 
-
     # ----- LISK
     # calls = [
     #     (
@@ -239,7 +238,7 @@ if __name__ == "__main__":
 
     # # ----- BSC
     method = "approve"
-    args = ['0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e', 12]
+    args = ["0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e", 12]
     calls = [
         (
             "0x63b7e5aE00cc6053358fb9b97B361372FbA10a5e",

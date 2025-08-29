@@ -54,7 +54,6 @@ def validate_safe_global(w3: Web3, safe: SafeGlobal):
     nonce = safe_contract.functions.nonce().call()
     print(f"Proposer address: {proposer_address}, version: {version}, nonce: {nonce}")
 
-    # Validate multi-send contract compatibility
     validate_multi_send_contract_compatibility(w3, safe)
 
     if validate_safe_client_gateway_api_url(w3, safe, nonce):
