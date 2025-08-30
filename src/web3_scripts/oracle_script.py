@@ -151,7 +151,7 @@ def run_oracle_validation(
     """
     Run oracle validation with retry logic and exponential backoff.
     """
-    max_retries = 3 # 4 attempts in total
+    max_retries = 3  # 4 attempts in total
     base_delay = 1.0  # Start with 1 second delay
 
     for attempt in range(max_retries + 1):
