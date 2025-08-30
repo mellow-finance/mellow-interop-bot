@@ -3,6 +3,7 @@ try:
 except ImportError:
     from base import *
 from dataclasses import dataclass
+import time
 
 
 @dataclass
@@ -19,7 +20,7 @@ class OracleValidationResult:
     incorrect_value: bool
 
 
-def run_oracle_validation(
+def _run_oracle_validation(
     source_core_address: str,
     target_core_address: str,
     source_rpc: str,
@@ -136,6 +137,48 @@ def format_remaining_time(remaining_time: int) -> str:
         if remaining_time > 3600
         else f"{remaining_time} seconds"
     )
+
+
+def run_oracle_validation(
+    source_core_address: str,
+    target_core_address: str,
+    source_rpc: str,
+    target_rpc: str,
+    source_core_helper: str,
+    target_core_helper: str,
+    oracle_freshness_in_seconds: int,
+) -> OracleValidationResult:
+    """
+    Run oracle validation with retry logic and exponential backoff.
+    """
+    max_retries = 3 # 4 attempts in total
+    base_delay = 1.0  # Start with 1 second delay
+
+    for attempt in range(max_retries + 1):
+        try:
+            return _run_oracle_validation(
+                source_core_address=source_core_address,
+                target_core_address=target_core_address,
+                source_rpc=source_rpc,
+                target_rpc=target_rpc,
+                source_core_helper=source_core_helper,
+                target_core_helper=target_core_helper,
+                oracle_freshness_in_seconds=oracle_freshness_in_seconds,
+            )
+        except Exception as e:
+            if attempt == max_retries:
+                print_colored(
+                    f"Oracle validation failed after {max_retries + 1} attempts: {str(e)}",
+                    "red",
+                )
+                raise e
+
+            delay = base_delay * (2**attempt)
+            print_colored(
+                f"Oracle validation attempt {attempt + 1} failed: {str(e)}. Retrying in {delay}s...",
+                "yellow",
+            )
+            time.sleep(delay)
 
 
 if __name__ == "__main__":
