@@ -39,7 +39,7 @@
       ],
       "safe-global": {
         "safe-address": "0xF32fD742608c237D5a377838fa69837584cA9676",
-        "proposer-private-key": "${FRAX_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
+        "proposer-private-key": "${FRAX_SAFE_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
         "api-url": "https://safe-gateway.mainnet.frax.com",
         "web-client-url": "https://safe.mainnet.frax.com"
       }
@@ -67,7 +67,7 @@
       ],
       "safe-global": {
         "safe-address": "0x62339BF5c4EB32EFAC9482F0277D68957A822641",
-        "proposer-private-key": "${LISK_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
+        "proposer-private-key": "${LISK_SAFE_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
         "api-url": "https://gateway.safe.optimism.io",
         "web-client-url": "https://safe.optimism.io"
       }

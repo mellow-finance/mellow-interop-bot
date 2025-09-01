@@ -34,7 +34,7 @@ The bot uses Safe Global for proposing multi-signature transactions. You can con
 - `SAFE_PROPOSER_PK` - Private key of the Safe proposer/signer.
 - `SAFE_API_KEY` - Safe Global API key for transaction service access.
 
-There are some chain-specific variables, like: `BSC_SAFE_ADDRESS`, `FRAX_SAFE_WEB_CLIENT_URL` etc., see `config.json`.
+There are some chain-specific variables, like: `BSC_SAFE_API_KEY`, `FRAX_SAFE_PROPOSER_PK` etc., see `config.json`.
 
 > Chain-specific variables take precedence over global variables. If not set, the system falls back to the global `SAFE_*` variables.
 
