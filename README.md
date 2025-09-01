@@ -31,11 +31,8 @@ The bot uses Safe Global for proposing multi-signature transactions. You can con
 
 **Global Safe Variables (fallback for all chains):**
 
-- `SAFE_ADDRESS` - Safe wallet address for transaction proposals.
 - `SAFE_PROPOSER_PK` - Private key of the Safe proposer/signer.
-- `SAFE_API_URL` - API URL (Transaction service API or Client Gateway API).
 - `SAFE_API_KEY` - Safe Global API key for transaction service access.
-- `SAFE_WEB_CLIENT_URL` - Safe web client URL (default: `https://app.safe.global`).
 
 There are some chain-specific variables, like: `BSC_SAFE_ADDRESS`, `FRAX_SAFE_WEB_CLIENT_URL` etc., see `config.json`.
 

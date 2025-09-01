@@ -18,11 +18,11 @@
         }
       ],
       "safe-global": {
-        "safe-address": "${BSC_SAFE_ADDRESS:${SAFE_ADDRESS}}",
+        "safe-address": "0x3f31b8Ca3fD126aBe13931CB6bd9D53d9fBb6235",
         "proposer-private-key": "${BSC_SAFE_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "${BSC_SAFE_API_URL:${SAFE_API_URL:https://api.safe.global/tx-service/bnb}}",
+        "api-url": "https://api.safe.global/tx-service/bnb",
         "api-key": "${BSC_SAFE_API_KEY:${SAFE_API_KEY}}",
-        "web-client-url": "${BSC_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://app.safe.global}}",
+        "web-client-url": "https://app.safe.global",
         "eip-3770": "bnb"
       }
     },
@@ -38,10 +38,10 @@
         }
       ],
       "safe-global": {
-        "safe-address": "${FRAX_SAFE_ADDRESS:${SAFE_ADDRESS}}",
+        "safe-address": "0xF32fD742608c237D5a377838fa69837584cA9676",
         "proposer-private-key": "${FRAX_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "${FRAX_SAFE_API_URL:https://safe-gateway.mainnet.frax.com}",
-        "web-client-url": "${FRAX_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://safe.mainnet.frax.com}}"
+        "api-url": "https://safe-gateway.mainnet.frax.com",
+        "web-client-url": "https://safe.mainnet.frax.com"
       }
     },
     {
@@ -66,10 +66,10 @@
         }
       ],
       "safe-global": {
-        "safe-address": "${LISK_SAFE_ADDRESS:${SAFE_ADDRESS}}",
+        "safe-address": "0x62339BF5c4EB32EFAC9482F0277D68957A822641",
         "proposer-private-key": "${LISK_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "${LISK_SAFE_API_URL:https://gateway.safe.optimism.io}",
-        "web-client-url": "${LISK_SAFE_WEB_CLIENT_URL:${SAFE_WEB_CLIENT_URL:https://safe.optimism.io}}"
+        "api-url": "https://gateway.safe.optimism.io",
+        "web-client-url": "https://safe.optimism.io"
       }
     }
   ]
