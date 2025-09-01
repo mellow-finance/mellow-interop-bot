@@ -2,8 +2,8 @@ name: Scheduled Bot Execution
 
 on:
   schedule:
-    # Run every 2 hours during day time, starting at 06:00 UTC
-    - cron: '0 6,8,10,12,14,16,18 * * *'
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
 
 jobs:
   run-bot:
@@ -25,10 +25,7 @@ jobs:
     
     - name: Run bot
       env:
-        ORACLE_FRESHNESS_IN_SECONDS: 10800 # 3 hours
-        SAFE_ADDRESS: ${{ vars.SAFE_ADDRESS }}
-        FRAX_SAFE_ADDRESS: ${{ vars.FRAX_SAFE_ADDRESS }}
-        LISK_SAFE_ADDRESS: ${{ vars.LISK_SAFE_ADDRESS }}
+        ORACLE_FRESHNESS_IN_SECONDS: 43200 # 12 hours
         TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
         TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
       run: |
