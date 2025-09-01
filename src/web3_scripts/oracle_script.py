@@ -13,6 +13,7 @@ class OracleValidationResult:
     oracle_value: int
     actual_value: int
     remaining_time: int
+    recently_updated: bool
     source_nonces: tuple[int, int]
     target_nonces: tuple[int, int]
     transfer_in_progress: bool
@@ -27,7 +28,8 @@ def _run_oracle_validation(
     target_rpc: str,
     source_core_helper: str,
     target_core_helper: str,
-    oracle_freshness_in_seconds: int,
+    oracle_expiry_threshold_seconds: int,
+    oracle_recent_update_threshold_seconds: int,
 ) -> OracleValidationResult:
     source_w3 = get_w3(source_rpc)
     target_w3 = get_w3(target_rpc)
@@ -73,8 +75,13 @@ def _run_oracle_validation(
     transfer_in_progress = (
         source_nonces[0] != target_nonces[1] or source_nonces[1] != target_nonces[0]
     )
-    almost_expired = remaining_time <= oracle_freshness_in_seconds
+    almost_expired = remaining_time <= oracle_expiry_threshold_seconds
     incorrect_value = oracle_value != secure_value
+
+    recently_updated = (
+        timestamp - oracle.lastUpdated().call()
+        <= oracle_recent_update_threshold_seconds
+    )
 
     result = OracleValidationResult(
         oracle_address=oracle_address,
@@ -82,6 +89,7 @@ def _run_oracle_validation(
         oracle_value=oracle_value,
         actual_value=secure_value,
         remaining_time=remaining_time,
+        recently_updated=recently_updated,
         source_nonces=source_nonces,
         target_nonces=target_nonces,
         transfer_in_progress=transfer_in_progress,
@@ -146,7 +154,8 @@ def run_oracle_validation(
     target_rpc: str,
     source_core_helper: str,
     target_core_helper: str,
-    oracle_freshness_in_seconds: int,
+    oracle_expiry_threshold_seconds: int,
+    oracle_recent_update_threshold_seconds: int,
 ) -> OracleValidationResult:
     """
     Run oracle validation with retry logic and exponential backoff.
@@ -163,7 +172,8 @@ def run_oracle_validation(
                 target_rpc=target_rpc,
                 source_core_helper=source_core_helper,
                 target_core_helper=target_core_helper,
-                oracle_freshness_in_seconds=oracle_freshness_in_seconds,
+                oracle_expiry_threshold_seconds=oracle_expiry_threshold_seconds,
+                oracle_recent_update_threshold_seconds=oracle_recent_update_threshold_seconds,
             )
         except Exception as e:
             if attempt == max_retries:
@@ -227,5 +237,6 @@ if __name__ == "__main__":
             target_rpc=target_rpc,
             source_core_helper=source_core_helper,
             target_core_helper=target_core_helper,
-            oracle_freshness_in_seconds=config.oracle_freshness_in_seconds,
+            oracle_expiry_threshold_seconds=config.oracle_expiry_threshold_seconds,
+            oracle_recent_update_threshold_seconds=config.oracle_recent_update_threshold_seconds,
         )

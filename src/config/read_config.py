@@ -36,7 +36,8 @@ class Config:
     telegram_bot_api_key: str
     telegram_group_chat_id: str
     telegram_owner_nicknames: Dict[str, str]
-    oracle_freshness_in_seconds: int
+    oracle_expiry_threshold_seconds: int
+    oracle_recent_update_threshold_seconds: int
     target_rpc: str
     target_core_helper: str
     sources: List[SourceConfig]
@@ -263,7 +264,12 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
         telegram_owner_nicknames=_parse_telegram_owners(
             config_dict["telegram_owner_nicknames"]
         ),
-        oracle_freshness_in_seconds=int(config_dict["oracle_freshness_in_seconds"]),
+        oracle_expiry_threshold_seconds=int(
+            config_dict["oracle_expiry_threshold_seconds"]
+        ),
+        oracle_recent_update_threshold_seconds=int(
+            config_dict["oracle_recent_update_threshold_seconds"]
+        ),
         target_rpc=config_dict["target_rpc"],
         target_core_helper=config_dict["target_core_helper"],
         sources=sources,

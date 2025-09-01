@@ -13,7 +13,9 @@ A cross-chain oracle monitoring and validation bot that tracks oracle states acr
 
 All environment variables can be optional.
 
-- `ORACLE_FRESHNESS_IN_SECONDS` - Oracle freshness threshold (default: `3600`).
+- `ORACLE_EXPIRY_THRESHOLD_SECONDS` - Threshold in seconds for marking an oracle as "almost expired" when its remaining time before expiry falls below this value. Triggers alerts when oracle needs updating (default: `3600`).
+- `ORACLE_RECENT_UPDATE_THRESHOLD_SECONDS` - Threshold in seconds to determine if an oracle was recently updated. When an oracle was updated within this timeframe, the bot sends a confirmation message to notify that the oracle has been updated (default: `0`).
+- `TELEGRAM_OWNER_NICKNAMES` - Comma-separated telegram nicknames of safe signers. Supports two formats: simple nicknames (`@josh,@anna,@dexter`) or `nickname:address` pairs (`@josh:0x123...,@anna:0xabc...`). Nicknames are mentioned in proposal messages when their confirmation is needed.
 - `TARGET_RPC` - Target blockchain RPC endpoint (see default in `config.json`).
 - `BSC_RPC` - BSC RPC endpoint (see default in `config.json`).
 - `FRAX_RPC` - Fraxtal RPC endpoint (see default in `config.json`).
@@ -131,4 +133,4 @@ Environment variables
 Same `SOURCE_RATIO_D3` and `MAX_SOURCE_RATIO_D3`, plus:
 
 - OPERATOR_PK - Private key to send transactions (required)
-- DEPLOYMENTS - Comma-separated list of deployments for which the script needs to be run (required, example: `BSC:CYC,FRAX:FRAX`). See the `config.json` for all avaiable pairs.
+- DEPLOYMENTS - Comma-separated list of deployments for which the script needs to be run (required, example: `BSC:CYC,FRAXTAL:FRAX`). See the `config.json` for all avaiable pairs.

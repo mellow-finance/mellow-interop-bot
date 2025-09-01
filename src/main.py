@@ -98,14 +98,19 @@ def compose_oracle_data_message(
     if len(oracle_validation_results) == 0:
         return ""
 
-    # Skip if there are no required updates
-    should_report = any(
+    # Skip if there are no required (or recent) updates
+    has_any_problem = any(
         oracle_data.validation is None  # Error during validation on-chain data
         or oracle_data.validation.almost_expired
         or oracle_data.validation.transfer_in_progress
         or oracle_data.validation.incorrect_value
         for _, oracle_data in oracle_validation_results
     )
+    has_recent_update = any(
+        oracle_data.validation is not None and oracle_data.validation.recently_updated
+        for _, oracle_data in oracle_validation_results
+    )
+    should_report = has_any_problem or has_recent_update
     if not should_report:
         return ""
 
@@ -136,6 +141,11 @@ def compose_oracle_data_message(
                 message += f"❌ Error during validation (RPC problem)"
             message += "\n"
         message += "```"
+
+    # TODO: Remove this after proposal is working
+    nicknames = [nickname for nickname, _ in config.telegram_owner_nicknames.items()]
+    if has_any_problem and len(nicknames) > 0:
+        message += f"\ncc {format_mentions(nicknames)}"
 
     return message
 
@@ -196,8 +206,12 @@ def compose_owner_mentions(
     owners = []
     for nickname, address in nickname_address_map.items():
         if address in proposal.transaction.missing_confirmations:
-            owners.append(nickname.replace("_", "\\_"))
-    return ", ".join(owners)
+            owners.append(nickname)
+    return format_mentions(owners)
+
+
+def format_mentions(mentions: List[str]) -> str:
+    return ", ".join("@" + mention.replace("_", "\\_") for mention in mentions)
 
 
 def compose_safe_tx_confirmations(proposal: SafeProposal) -> tuple[str, bool]:
@@ -291,7 +305,8 @@ def validate_oracles(
                     target_rpc=config.target_rpc,
                     source_core_helper=source.source_core_helper,
                     target_core_helper=config.target_core_helper,
-                    oracle_freshness_in_seconds=config.oracle_freshness_in_seconds,
+                    oracle_expiry_threshold_seconds=config.oracle_expiry_threshold_seconds,
+                    oracle_recent_update_threshold_seconds=config.oracle_recent_update_threshold_seconds,
                 )
                 validation_result = oracle_validation_result
             except Exception as e:
