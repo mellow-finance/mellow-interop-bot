@@ -26,7 +26,7 @@ def run(
         target_rpc,
         source_core_helper,
         target_core_helper,
-        oracle_freshness_in_seconds=3600,
+        oracle_expiry_threshold_seconds=3600,
     )
 
     if oracle_validation_result.transfer_in_progress:

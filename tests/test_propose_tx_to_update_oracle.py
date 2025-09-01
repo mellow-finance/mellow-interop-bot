@@ -81,6 +81,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             oracle_value=1000000000000000000,  # 1 ETH
             actual_value=1100000000000000000,  # 1.1 ETH
             remaining_time=0,
+            recently_updated=False,
             source_nonces=(100, 101),
             target_nonces=(200, 201),
             transfer_in_progress=False,
@@ -94,6 +95,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             oracle_value=2000000000000000000,  # 2 ETH
             actual_value=2200000000000000000,  # 2.2 ETH
             remaining_time=3600,
+            recently_updated=False,
             source_nonces=(102, 103),
             target_nonces=(202, 203),
             transfer_in_progress=False,
@@ -107,6 +109,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             oracle_value=3000000000000000000,  # 3 BNB
             actual_value=3300000000000000000,  # 3.3 BNB
             remaining_time=0,
+            recently_updated=False,
             source_nonces=(104, 105),
             target_nonces=(204, 205),
             transfer_in_progress=True,  # Should be skipped
@@ -120,6 +123,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             oracle_value=4000000000000000000,  # 4 BNB
             actual_value=4000000000000000000,  # Same value
             remaining_time=7200,
+            recently_updated=False,
             source_nonces=(106, 107),
             target_nonces=(206, 207),
             transfer_in_progress=False,
@@ -133,6 +137,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             oracle_value=5000000000000000000,  # 5 BNB
             actual_value=5500000000000000000,  # 5.5 BNB
             remaining_time=0,
+            recently_updated=False,
             source_nonces=(108, 109),
             target_nonces=(208, 209),
             transfer_in_progress=False,

@@ -2,7 +2,8 @@
   "telegram-bot-api-key": "${TELEGRAM_BOT_API_KEY}",
   "telegram-group-chat-id": "${TELEGRAM_GROUP_CHAT_ID}",
   "telegram-owner-nicknames": "${TELEGRAM_OWNER_NICKNAMES}",
-  "oracle-freshness-in-seconds": "${ORACLE_FRESHNESS_IN_SECONDS:3600}",
+  "oracle-expiry-threshold-seconds": "${ORACLE_EXPIRY_THRESHOLD_SECONDS:3600}",
+  "oracle-recent-update-threshold-seconds": "${ORACLE_RECENT_UPDATE_THRESHOLD_SECONDS:0}",
   "target-rpc": "${TARGET_RPC:https://eth.drpc.org}",
   "target-core-helper": "0x649f34cfdc9bcaea43fe61b17ecfd601b444f45b",
   "sources": [

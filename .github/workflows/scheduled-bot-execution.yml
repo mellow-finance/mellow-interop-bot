@@ -25,8 +25,10 @@ jobs:
     
     - name: Run bot
       env:
-        ORACLE_FRESHNESS_IN_SECONDS: 43200 # 12 hours
+        ORACLE_EXPIRY_THRESHOLD_SECONDS: 43200 # 12 hours
+        ORACLE_RECENT_UPDATE_THRESHOLD_SECONDS: 14400 # 4 hours (= cron interval)
         TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
         TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
+        TELEGRAM_OWNER_NICKNAMES: ${{ secrets.TELEGRAM_OWNER_NICKNAMES }}
       run: |
         python ./src/main.py
