@@ -30,5 +30,9 @@ jobs:
         TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
         TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         TELEGRAM_OWNER_NICKNAMES: ${{ secrets.TELEGRAM_OWNER_NICKNAMES }}
+        TARGET_RPC: ${{ secrets.TARGET_RPC }}
+        BSC_RPC: ${{ secrets.BSC_RPC }}
+        FRAX_RPC: ${{ secrets.FRAX_RPC }}
+        LISK_RPC: ${{ secrets.LISK_RPC }}
       run: |
         python ./src/main.py
