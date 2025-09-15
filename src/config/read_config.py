@@ -158,7 +158,7 @@ def _substitute_env_vars(value: str, visited_vars: set = None) -> str:
             )
 
         env_value = os.getenv(var_name)
-        replacement_source = env_value if env_value is not None else default_value
+        replacement_source = env_value if env_value else default_value
 
         # Recursively resolve nested variables in the replacement source
         new_visited = visited_vars.copy()

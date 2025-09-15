@@ -147,6 +147,18 @@ def format_remaining_time(remaining_time: int) -> str:
     )
 
 
+def _sanitize_error_message(error_msg: str, source_rpc: str, target_rpc: str) -> str:
+    """
+    Replace sensitive RPC URLs in error messages with placeholder text.
+    """
+    sanitized_msg = error_msg
+    if source_rpc in sanitized_msg:
+        sanitized_msg = sanitized_msg.replace(source_rpc, "[SOURCE_RPC_MASKED]")
+    if target_rpc in sanitized_msg:
+        sanitized_msg = sanitized_msg.replace(target_rpc, "[TARGET_RPC_MASKED]")
+    return sanitized_msg
+
+
 def run_oracle_validation(
     source_core_address: str,
     target_core_address: str,
@@ -176,16 +188,22 @@ def run_oracle_validation(
                 oracle_recent_update_threshold_seconds=oracle_recent_update_threshold_seconds,
             )
         except Exception as e:
+            # Sanitize error message to remove sensitive RPC URLs
+            sanitized_error_msg = _sanitize_error_message(
+                str(e), source_rpc, target_rpc
+            )
+
             if attempt == max_retries:
                 print_colored(
-                    f"Oracle validation failed after {max_retries + 1} attempts: {str(e)}",
+                    f"Oracle validation failed after {max_retries + 1} attempts: {sanitized_error_msg}",
                     "red",
                 )
-                raise e
+                # Create a new exception with sanitized message to avoid leaking RPC URLs in the stack trace
+                raise Exception(f"Oracle validation failed: {sanitized_error_msg}")
 
             delay = base_delay * (2**attempt)
             print_colored(
-                f"Oracle validation attempt {attempt + 1} failed: {str(e)}. Retrying in {delay}s...",
+                f"Oracle validation attempt {attempt + 1} failed: {sanitized_error_msg}. Retrying in {delay}s...",
                 "yellow",
             )
             time.sleep(delay)
