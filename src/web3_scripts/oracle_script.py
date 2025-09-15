@@ -189,8 +189,10 @@ def run_oracle_validation(
             )
         except Exception as e:
             # Sanitize error message to remove sensitive RPC URLs
-            sanitized_error_msg = _sanitize_error_message(str(e), source_rpc, target_rpc)
-            
+            sanitized_error_msg = _sanitize_error_message(
+                str(e), source_rpc, target_rpc
+            )
+
             if attempt == max_retries:
                 print_colored(
                     f"Oracle validation failed after {max_retries + 1} attempts: {sanitized_error_msg}",
