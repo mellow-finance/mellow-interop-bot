@@ -425,6 +425,35 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertIn("Network error", error_message)
 
     @patch("main.propose_tx_if_needed")
+    @patch("main.print_colored")
+    def test_propose_tx_exception_masks_private_key(self, mock_print_colored, mock_propose_tx):
+        """Test that private key is masked in error messages"""
+        # Create an exception message that contains the private key
+        private_key = self.source_config_1.safe_global.proposer_private_key
+        mock_propose_tx.side_effect = Exception(
+            f"Authentication failed with key {private_key}"
+        )
+
+        oracle_validation_results = [(self.source_config_1, self.oracle_data_expired)]
+
+        result = propose_tx_to_update_oracle(oracle_validation_results)
+
+        # Verify error was logged
+        mock_print_colored.assert_called_once()
+        error_message = mock_print_colored.call_args[0][0]
+
+        # Verify private key is NOT in the error message
+        self.assertNotIn(private_key, error_message)
+
+        # Verify the masked version is present (first 4 chars + asterisks)
+        masked_key = private_key[:4] + "*" * (len(private_key) - 4)
+        self.assertIn(masked_key, error_message)
+
+        # Verify the rest of the error message is intact
+        self.assertIn("Error proposing tx for source Ethereum", error_message)
+        self.assertIn("Authentication failed with key", error_message)
+
+    @patch("main.propose_tx_if_needed")
     def test_empty_input(self, mock_propose_tx):
         """Test with empty input list"""
         result = propose_tx_to_update_oracle([])

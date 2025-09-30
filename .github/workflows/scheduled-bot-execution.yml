@@ -1,6 +1,7 @@
 name: Scheduled Bot Execution
 
 on:
+  workflow_dispatch:
   schedule:
     # Run every 4 hours
     - cron: '0 */4 * * *'
@@ -27,9 +28,12 @@ jobs:
       env:
         ORACLE_EXPIRY_THRESHOLD_SECONDS: 43200 # 12 hours
         ORACLE_RECENT_UPDATE_THRESHOLD_SECONDS: 14400 # 4 hours (= cron interval)
+        SAFE_PROPOSER_PK: ${{ secrets.SAFE_PROPOSER_PK }}
+        SAFE_API_KEY: ${{ secrets.SAFE_API_KEY }}
         TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
         TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         TELEGRAM_OWNER_NICKNAMES: ${{ secrets.TELEGRAM_OWNER_NICKNAMES }}
+        TELEGRAM_PROPOSAL_MESSAGE_PREFIX: "/decode"
         TARGET_RPC: ${{ secrets.TARGET_RPC }}
         BSC_RPC: ${{ secrets.BSC_RPC }}
         FRAX_RPC: ${{ secrets.FRAX_RPC }}

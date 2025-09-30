@@ -5,7 +5,15 @@ from collections import defaultdict
 from typing import List, Optional, Tuple, Dict
 
 from telegram_bot import send_message, print_telegram_info
-from config import read_config, Config, SourceConfig, SafeGlobal
+from config import (
+    read_config,
+    Config,
+    SourceConfig,
+    SafeGlobal,
+    mask_source_sensitive_data,
+    mask_url_credentials,
+    mask_all_sensitive_config_data,
+)
 from web3_scripts import (
     OracleValidationResult,
     run_oracle_validation,
@@ -34,6 +42,7 @@ class SafeProposal:
 
 
 async def main():
+    config = None
     try:
         # Load environment variables
         dotenv.load_dotenv()
@@ -56,7 +65,7 @@ async def main():
             return
 
         # Send message with oracle statuses
-        await send_message(
+        status_message = await send_message(
             config.telegram_bot_api_key, config.telegram_group_chat_id, message
         )
 
@@ -74,16 +83,23 @@ async def main():
 
             # Send message with safe proposal for each source
             if message:
+                if config.telegram_proposal_message_prefix:
+                    message = config.telegram_proposal_message_prefix + "\n" + message
+
                 await send_message(
-                    config.telegram_bot_api_key, config.telegram_group_chat_id, message
+                    config.telegram_bot_api_key,
+                    config.telegram_group_chat_id,
+                    message,
+                    reply_to_message_id=status_message.message_id if status_message else None,
                 )
         print(f"Sent {len(safe_proposals)} message(s) with safe proposal")
     except FileNotFoundError:
         print(f"Error: config.json not found")
     except Exception as e:
-        print(f"Error parsing JSON file: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+        error_message = str(e)
+        # Mask all sensitive config data if config was loaded
+        error_message = mask_all_sensitive_config_data(error_message, config)
+        print(f"Unexpected error: {error_message}")
 
 
 def compose_oracle_data_message(
@@ -144,11 +160,6 @@ def compose_oracle_data_message(
                 message += f"❌ Error during validation (RPC problem)"
             message += "\n"
         message += "```"
-
-    # TODO: Remove this after proposal is working
-    nicknames = [nickname for nickname, _ in config.telegram_owner_nicknames.items()]
-    if has_any_problem and len(nicknames) > 0:
-        message += f"\ncc {format_mentions(nicknames)}"
 
     return message
 
@@ -280,7 +291,10 @@ def propose_tx_to_update_oracle(
         try:
             transaction = propose_tx_if_needed(contract_abi, method, calls, source)
         except Exception as e:
-            print_colored(f"Error proposing tx for source {source.name}: {e}", "red")
+            error_message = str(e)
+            # Mask all source-related sensitive data (RPC URL, private key, API key)
+            masked_error = mask_source_sensitive_data(error_message, source)
+            print_colored(f"Error proposing tx for source {source.name}: {masked_error}", "red")
 
         proposal = SafeProposal(
             method=method,
@@ -313,7 +327,11 @@ def validate_oracles(
                 )
                 validation_result = oracle_validation_result
             except Exception as e:
-                print(f"Error validating oracle for source {source.name}: {e}")
+                error_message = str(e)
+                # Mask source RPC and target RPC URLs that might be in the error
+                masked_error = mask_source_sensitive_data(error_message, source)
+                masked_error = mask_url_credentials(masked_error, config.target_rpc)
+                print(f"Error validating oracle for source {source.name}: {masked_error}")
             oracle_data = OracleData(name=deployment.name, validation=validation_result)
             result.append((source, oracle_data))
     return result

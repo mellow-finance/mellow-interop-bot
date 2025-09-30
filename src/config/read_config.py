@@ -36,6 +36,7 @@ class Config:
     telegram_bot_api_key: str
     telegram_group_chat_id: str
     telegram_owner_nicknames: Dict[str, str]
+    telegram_proposal_message_prefix: str
     oracle_expiry_threshold_seconds: int
     oracle_recent_update_threshold_seconds: int
     target_rpc: str
@@ -264,6 +265,7 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
         telegram_owner_nicknames=_parse_telegram_owners(
             config_dict["telegram_owner_nicknames"]
         ),
+        telegram_proposal_message_prefix=config_dict["telegram_proposal_message_prefix"],
         oracle_expiry_threshold_seconds=int(
             config_dict["oracle_expiry_threshold_seconds"]
         ),

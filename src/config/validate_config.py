@@ -9,13 +9,14 @@ if __name__ == "__main__":
 from web3_scripts import get_w3, print_colored, get_contract, Account, Web3
 from safe_global import client_gateway_api, transaction_api
 from safe_global.multi_send_call import multi_send_contracts
-from config import (
-    Config,
-    SourceConfig,
-    Deployment,
-    SafeGlobal,
-    read_config,
-)
+
+# Handle both relative and absolute imports
+try:
+    from .read_config import Config, SourceConfig, Deployment, SafeGlobal, read_config
+    from .mask_sensitive_data import mask_url_credentials, mask_source_sensitive_data
+except ImportError:
+    from config.read_config import Config, SourceConfig, Deployment, SafeGlobal, read_config
+    from config.mask_sensitive_data import mask_url_credentials, mask_source_sensitive_data
 
 
 def validate_config(config: Config):
@@ -67,7 +68,10 @@ def validate_safe_global(w3: Web3, source: SourceConfig):
     if validate_safe_client_gateway_api_url(w3, safe, nonce):
         pass
     elif not validate_safe_transaction_api_url(safe):
-        raise Exception(f"Invalid safe API URL: {safe.api_url}")
+        # Mask API URL which might contain credentials
+        error_msg = f"Invalid safe API URL: {safe.api_url}"
+        masked_error = mask_url_credentials(error_msg, safe.api_url)
+        raise Exception(masked_error)
 
 
 def validate_safe_owner_addresses(config: Config):
@@ -170,7 +174,11 @@ def validate_rpc_url(w3: Web3, label: str):
     """
     print(f"Validating RPC URL for {label}...")
     if w3.eth.get_block("latest").number <= 0:
-        raise Exception(f"RPC URL {w3.provider.endpoint_uri} is not valid")
+        # Mask RPC URL which might contain credentials
+        rpc_url = str(w3.provider.endpoint_uri)
+        error_msg = f"RPC URL {rpc_url} is not valid"
+        masked_error = mask_url_credentials(error_msg, rpc_url)
+        raise Exception(masked_error)
 
 
 def validate_deployments(source_w3: Web3, target_w3: Web3, source: SourceConfig):
@@ -267,9 +275,10 @@ def validate_source_helper(w3: Web3, source: SourceConfig):
                     "yellow",
                 )
     except Exception as e:
-        raise Exception(
-            f"Source helper ({source.source_core_helper}) is not valid: {e}"
-        )
+        # Mask any RPC URLs or sensitive data in the error message
+        error_msg = f"Source helper ({source.source_core_helper}) is not valid: {e}"
+        masked_error = mask_source_sensitive_data(error_msg, source)
+        raise Exception(masked_error)
 
 
 def validate_target_helper(w3: Web3, config: Config):
@@ -292,9 +301,10 @@ def validate_target_helper(w3: Web3, config: Config):
                         "yellow",
                     )
     except Exception as e:
-        raise Exception(
-            f"Target helper ({config.target_core_helper}) is not valid: {e}"
-        )
+        # Mask any RPC URLs or sensitive data in the error message
+        error_msg = f"Target helper ({config.target_core_helper}) is not valid: {e}"
+        masked_error = mask_url_credentials(error_msg, config.target_rpc)
+        raise Exception(masked_error)
 
 
 def validate_symbol(source_w3: Web3, target_w3: Web3, deployment: Deployment):
