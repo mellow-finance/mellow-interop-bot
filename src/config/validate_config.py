@@ -15,8 +15,17 @@ try:
     from .read_config import Config, SourceConfig, Deployment, SafeGlobal, read_config
     from .mask_sensitive_data import mask_url_credentials, mask_source_sensitive_data
 except ImportError:
-    from config.read_config import Config, SourceConfig, Deployment, SafeGlobal, read_config
-    from config.mask_sensitive_data import mask_url_credentials, mask_source_sensitive_data
+    from config.read_config import (
+        Config,
+        SourceConfig,
+        Deployment,
+        SafeGlobal,
+        read_config,
+    )
+    from config.mask_sensitive_data import (
+        mask_url_credentials,
+        mask_source_sensitive_data,
+    )
 
 
 def validate_config(config: Config):

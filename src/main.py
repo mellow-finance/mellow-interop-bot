@@ -90,7 +90,9 @@ async def main():
                     config.telegram_bot_api_key,
                     config.telegram_group_chat_id,
                     message,
-                    reply_to_message_id=status_message.message_id if status_message else None,
+                    reply_to_message_id=(
+                        status_message.message_id if status_message else None
+                    ),
                 )
         print(f"Sent {len(safe_proposals)} message(s) with safe proposal")
     except FileNotFoundError:
@@ -294,7 +296,9 @@ def propose_tx_to_update_oracle(
             error_message = str(e)
             # Mask all source-related sensitive data (RPC URL, private key, API key)
             masked_error = mask_source_sensitive_data(error_message, source)
-            print_colored(f"Error proposing tx for source {source.name}: {masked_error}", "red")
+            print_colored(
+                f"Error proposing tx for source {source.name}: {masked_error}", "red"
+            )
 
         proposal = SafeProposal(
             method=method,
@@ -331,7 +335,9 @@ def validate_oracles(
                 # Mask source RPC and target RPC URLs that might be in the error
                 masked_error = mask_source_sensitive_data(error_message, source)
                 masked_error = mask_url_credentials(masked_error, config.target_rpc)
-                print(f"Error validating oracle for source {source.name}: {masked_error}")
+                print(
+                    f"Error validating oracle for source {source.name}: {masked_error}"
+                )
             oracle_data = OracleData(name=deployment.name, validation=validation_result)
             result.append((source, oracle_data))
     return result

@@ -426,7 +426,9 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
     @patch("main.propose_tx_if_needed")
     @patch("main.print_colored")
-    def test_propose_tx_exception_masks_private_key(self, mock_print_colored, mock_propose_tx):
+    def test_propose_tx_exception_masks_private_key(
+        self, mock_print_colored, mock_propose_tx
+    ):
         """Test that private key is masked in error messages"""
         # Create an exception message that contains the private key
         private_key = self.source_config_1.safe_global.proposer_private_key

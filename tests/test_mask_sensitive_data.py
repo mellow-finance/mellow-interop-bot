@@ -21,9 +21,9 @@ class TestMaskSensitiveData(unittest.TestCase):
         """Test basic masking of sensitive data"""
         message = "Error with key: 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
         sensitive = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-        
+
         result = mask_sensitive_data(message, sensitive)
-        
+
         # Should not contain the full sensitive value
         self.assertNotIn(sensitive, result)
         # Should contain masked version (first 4 chars + asterisks)
@@ -33,27 +33,27 @@ class TestMaskSensitiveData(unittest.TestCase):
         """Test that short values are not masked"""
         message = "Error with key: short"
         sensitive = "short"
-        
+
         result = mask_sensitive_data(message, sensitive)
-        
+
         # Should remain unchanged for short values
         self.assertEqual(message, result)
 
     def test_mask_sensitive_data_none(self):
         """Test that None values don't cause errors"""
         message = "Error occurred"
-        
+
         result = mask_sensitive_data(message, None)
-        
+
         # Should remain unchanged
         self.assertEqual(message, result)
 
     def test_mask_sensitive_data_empty_string(self):
         """Test that empty strings don't cause errors"""
         message = "Error occurred"
-        
+
         result = mask_sensitive_data(message, "")
-        
+
         # Should remain unchanged
         self.assertEqual(message, result)
 
@@ -64,9 +64,9 @@ class TestMaskUrlCredentials(unittest.TestCase):
         """Test masking URL with API key in query parameters"""
         message = "Failed to connect to https://mainnet.infura.io/v3/abc123def456?apikey=secret123"
         url = "https://mainnet.infura.io/v3/abc123def456?apikey=secret123"
-        
+
         result = mask_url_credentials(message, url)
-        
+
         # Should not contain the full URL
         self.assertNotIn(url, result)
         # Should contain masked version with domain visible
@@ -76,9 +76,9 @@ class TestMaskUrlCredentials(unittest.TestCase):
         """Test masking URL with authentication in URL"""
         message = "Failed to connect to https://user:password@example.com/rpc"
         url = "https://user:password@example.com/rpc"
-        
+
         result = mask_url_credentials(message, url)
-        
+
         # Should not contain the full URL with credentials
         self.assertNotIn("user:password", result)
 
@@ -86,9 +86,9 @@ class TestMaskUrlCredentials(unittest.TestCase):
         """Test masking URL with API key in path"""
         message = "RPC error: https://mainnet.infura.io/v3/abc123def456"
         url = "https://mainnet.infura.io/v3/abc123def456"
-        
+
         result = mask_url_credentials(message, url)
-        
+
         # Should contain domain but mask the rest
         self.assertIn("https://mainnet.infura.io/***", result)
 
@@ -96,18 +96,18 @@ class TestMaskUrlCredentials(unittest.TestCase):
         """Test that simple URLs without credentials are not masked"""
         message = "Failed to connect to https://example.com"
         url = "https://example.com"
-        
+
         result = mask_url_credentials(message, url)
-        
+
         # Should remain unchanged for simple URLs
         self.assertEqual(message, result)
 
     def test_mask_url_none(self):
         """Test that None URL doesn't cause errors"""
         message = "Error occurred"
-        
+
         result = mask_url_credentials(message, None)
-        
+
         # Should remain unchanged
         self.assertEqual(message, result)
 
@@ -142,9 +142,9 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
     def test_mask_source_rpc_url(self):
         """Test masking source RPC URL"""
         message = f"RPC error: {self.source_config.rpc}"
-        
+
         result = mask_source_sensitive_data(message, self.source_config)
-        
+
         # Should not contain the full URL with API key
         self.assertNotIn("abc123def456", result)
         self.assertNotIn("secret123", result)
@@ -155,9 +155,9 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
         """Test masking source proposer private key"""
         private_key = self.source_config.safe_global.proposer_private_key
         message = f"Signing error with key {private_key}"
-        
+
         result = mask_source_sensitive_data(message, self.source_config)
-        
+
         # Should not contain the full private key
         self.assertNotIn(private_key, result)
         # Should contain masked version
@@ -167,9 +167,9 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
         """Test masking source safe API key"""
         api_key = self.source_config.safe_global.api_key
         message = f"Safe API error with key {api_key}"
-        
+
         result = mask_source_sensitive_data(message, self.source_config)
-        
+
         # Should not contain the full API key
         self.assertNotIn(api_key, result)
         # Should contain masked version
@@ -182,14 +182,14 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
             f"Private key {self.source_config.safe_global.proposer_private_key}, "
             f"API key {self.source_config.safe_global.api_key}"
         )
-        
+
         result = mask_source_sensitive_data(message, self.source_config)
-        
+
         # Should not contain any full sensitive values
         self.assertNotIn("abc123def456", result)
         self.assertNotIn(self.source_config.safe_global.proposer_private_key, result)
         self.assertNotIn(self.source_config.safe_global.api_key, result)
-        
+
         # Should contain masked versions
         self.assertIn("https://mainnet.infura.io/***", result)
         self.assertIn("0xab" + "*" * 62, result)
@@ -198,9 +198,9 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
     def test_mask_source_with_none_source(self):
         """Test that None source doesn't cause errors"""
         message = "Error occurred"
-        
+
         result = mask_source_sensitive_data(message, None)
-        
+
         # Should remain unchanged
         self.assertEqual(message, result)
 
@@ -213,10 +213,10 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
             deployments=(),
             safe_global=None,
         )
-        
+
         message = f"RPC error: {source_no_safe.rpc}"
         result = mask_source_sensitive_data(message, source_no_safe)
-        
+
         # Should still mask RPC URL even without safe_global
         self.assertNotIn("xyz789", result)
         self.assertIn("https://polygon-rpc.infura.io/***", result)
@@ -231,7 +231,7 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
             web_client_url="https://safe-web.example.com",
             eip_3770="eth",
         )
-        
+
         source = SourceConfig(
             name="Test",
             rpc="https://test-rpc.example.com/v3/secret",
@@ -239,10 +239,10 @@ class TestMaskSourceSensitiveData(unittest.TestCase):
             deployments=(),
             safe_global=safe_global_no_api_key,
         )
-        
+
         message = f"Error with private key {source.safe_global.proposer_private_key}"
         result = mask_source_sensitive_data(message, source)
-        
+
         # Should still mask private key
         self.assertNotIn(source.safe_global.proposer_private_key, result)
         self.assertIn("0xab" + "*" * 62, result)
@@ -293,9 +293,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
     def test_mask_telegram_bot_api_key(self):
         """Test masking telegram bot API key"""
         message = f"Telegram error with key {self.config.telegram_bot_api_key}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain the full API key
         self.assertNotIn(self.config.telegram_bot_api_key, result)
         # Should contain masked version
@@ -304,9 +304,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
     def test_mask_telegram_group_chat_id(self):
         """Test masking telegram group chat ID"""
         message = f"Failed to send to chat {self.config.telegram_group_chat_id}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain the full chat ID
         self.assertNotIn(self.config.telegram_group_chat_id, result)
         # Should contain masked version
@@ -317,9 +317,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
         alice_address = self.config.telegram_owner_nicknames["alice"]
         bob_address = self.config.telegram_owner_nicknames["bob"]
         message = f"Owners: {alice_address} and {bob_address}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain full addresses
         self.assertNotIn(alice_address, result)
         self.assertNotIn(bob_address, result)
@@ -330,9 +330,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
     def test_mask_source_rpc_url(self):
         """Test masking source RPC URL with credentials"""
         message = f"RPC error: {self.source_config.rpc}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain the full URL with API key
         self.assertNotIn("abc123def456", result)
         self.assertNotIn("secret123", result)
@@ -342,9 +342,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
     def test_mask_target_rpc_url(self):
         """Test masking target RPC URL with credentials"""
         message = f"Target RPC error: {self.config.target_rpc}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain the full URL with API key
         self.assertNotIn("xyz789", result)
         self.assertNotIn("target_secret", result)
@@ -355,9 +355,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
         """Test masking proposer private key"""
         private_key = self.safe_global.proposer_private_key
         message = f"Signing error with key {private_key}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain the full private key
         self.assertNotIn(private_key, result)
         # Should contain masked version
@@ -367,9 +367,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
         """Test masking safe API key"""
         api_key = self.safe_global.api_key
         message = f"Safe API error with key {api_key}"
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain the full API key
         self.assertNotIn(api_key, result)
         # Should contain masked version
@@ -382,14 +382,14 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
             f"RPC {self.source_config.rpc}, "
             f"Private key {self.safe_global.proposer_private_key}"
         )
-        
+
         result = mask_all_sensitive_config_data(message, self.config)
-        
+
         # Should not contain any full sensitive values
         self.assertNotIn(self.config.telegram_bot_api_key, result)
         self.assertNotIn("abc123def456", result)
         self.assertNotIn(self.safe_global.proposer_private_key, result)
-        
+
         # Should contain masked versions
         self.assertIn("1234***", result)
         self.assertIn("https://mainnet.infura.io/***", result)
@@ -398,9 +398,9 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
     def test_mask_with_none_config(self):
         """Test that None config doesn't cause errors"""
         message = "Error occurred"
-        
+
         result = mask_all_sensitive_config_data(message, None)
-        
+
         # Should remain unchanged
         self.assertEqual(message, result)
 
@@ -413,7 +413,7 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
             deployments=(),
             safe_global=None,
         )
-        
+
         config = Config(
             telegram_bot_api_key="test_key_12345678",
             telegram_group_chat_id="-100123456789",
@@ -425,10 +425,10 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
             target_core_helper="0x4444444444444444444444444444444444444444",
             sources=[source_no_safe],
         )
-        
+
         message = f"Error with key test_key_12345678"
         result = mask_all_sensitive_config_data(message, config)
-        
+
         # Should still mask telegram key even without safe_global
         self.assertNotIn("test_key_12345678", result)
         self.assertIn("test***", result)
@@ -446,10 +446,10 @@ class TestMaskAllSensitiveConfigData(unittest.TestCase):
             target_core_helper="0x4444444444444444444444444444444444444444",
             sources=[],
         )
-        
+
         message = "Error occurred"
         result = mask_all_sensitive_config_data(message, config)
-        
+
         # Should not crash and return message
         self.assertEqual(message, result)
 
