@@ -193,7 +193,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
     @patch("main.propose_tx_if_needed")
     def test_single_source_single_oracle_expired(self, mock_propose_tx):
         """Test with single source and single expired oracle"""
-        mock_propose_tx.return_value = self.mock_pending_transaction
+        mock_propose_tx.return_value = (self.mock_pending_transaction, True)
 
         oracle_validation_results = [(self.source_config_1, self.oracle_data_expired)]
 
@@ -216,6 +216,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             ("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", [1100000000000000000]),
         )
         self.assertEqual(proposal.transaction, self.mock_pending_transaction)
+        self.assertTrue(proposal.is_newly_created)
 
         # Verify propose_tx_if_needed was called correctly
         mock_propose_tx.assert_called_once_with(
@@ -228,7 +229,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
     @patch("main.propose_tx_if_needed")
     def test_single_source_multiple_oracles_batched(self, mock_propose_tx):
         """Test with single source and multiple oracles that should be batched"""
-        mock_propose_tx.return_value = self.mock_pending_transaction
+        mock_propose_tx.return_value = (self.mock_pending_transaction, True)
 
         oracle_validation_results = [
             (self.source_config_1, self.oracle_data_expired),
@@ -250,6 +251,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             set(proposal.deployment_names), {"ETH-BSC Oracle 1", "ETH-BSC Oracle 2"}
         )
         self.assertEqual(len(proposal.calls), 2)
+        self.assertTrue(proposal.is_newly_created)
 
         # Check both calls are present (order might vary due to dict iteration)
         expected_calls = [
@@ -270,7 +272,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
     @patch("main.propose_tx_if_needed")
     def test_multiple_sources_separate_proposals(self, mock_propose_tx):
         """Test with multiple sources - should create separate proposals"""
-        mock_propose_tx.return_value = self.mock_pending_transaction
+        mock_propose_tx.return_value = (self.mock_pending_transaction, True)
 
         oracle_validation_results = [
             (self.source_config_1, self.oracle_data_expired),
@@ -297,6 +299,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             self.assertEqual(proposal.method, "setValue")
             self.assertEqual(len(proposal.calls), 1)
             self.assertEqual(proposal.transaction, self.mock_pending_transaction)
+            self.assertTrue(proposal.is_newly_created)
 
             if source == self.source_config_1:
                 self.assertEqual(proposal.deployment_names, ["ETH-BSC Oracle 1"])
@@ -323,7 +326,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
     @patch("main.propose_tx_if_needed")
     def test_filtering_logic(self, mock_propose_tx):
         """Test that oracles are properly filtered based on validation criteria"""
-        mock_propose_tx.return_value = self.mock_pending_transaction
+        mock_propose_tx.return_value = (self.mock_pending_transaction, True)
 
         oracle_validation_results = [
             (self.source_config_1, self.oracle_data_expired),  # Should be included
@@ -358,11 +361,13 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertIsNotNone(source1_proposal)
         self.assertEqual(len(source1_proposal.calls), 1)
         self.assertEqual(source1_proposal.deployment_names, ["ETH-BSC Oracle 1"])
+        self.assertTrue(source1_proposal.is_newly_created)
 
         # Verify source2 proposal (should have 1 oracle, others filtered out)
         self.assertIsNotNone(source2_proposal)
         self.assertEqual(len(source2_proposal.calls), 1)
         self.assertEqual(source2_proposal.deployment_names, ["BSC-ETH Oracle 3"])
+        self.assertTrue(source2_proposal.is_newly_created)
 
         # Verify propose_tx_if_needed was called twice
         self.assertEqual(mock_propose_tx.call_count, 2)
@@ -417,6 +422,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertEqual(proposal.method, "setValue")
         self.assertEqual(len(proposal.calls), 1)
         self.assertIsNone(proposal.transaction)  # Should be None due to exception
+        self.assertFalse(proposal.is_newly_created)  # Should be False due to exception
 
         # Verify error was logged
         mock_print_colored.assert_called_once()
@@ -439,6 +445,12 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         oracle_validation_results = [(self.source_config_1, self.oracle_data_expired)]
 
         result = propose_tx_to_update_oracle(oracle_validation_results)
+
+        # Should still return a result
+        self.assertEqual(len(result), 1)
+        source, proposal = result[0]
+        self.assertIsNone(proposal.transaction)
+        self.assertFalse(proposal.is_newly_created)
 
         # Verify error was logged
         mock_print_colored.assert_called_once()
@@ -466,7 +478,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
     @patch("main.propose_tx_if_needed")
     def test_grouping_by_source_correctness(self, mock_propose_tx):
         """Test that grouping by source works correctly with same source appearing multiple times"""
-        mock_propose_tx.return_value = self.mock_pending_transaction
+        mock_propose_tx.return_value = (self.mock_pending_transaction, True)
 
         # Same source appears multiple times in different positions
         oracle_validation_results = [
@@ -502,6 +514,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             set(source1_proposal.deployment_names),
             {"ETH-BSC Oracle 1", "ETH-BSC Oracle 2"},
         )
+        self.assertTrue(source1_proposal.is_newly_created)
 
 
 if __name__ == "__main__":

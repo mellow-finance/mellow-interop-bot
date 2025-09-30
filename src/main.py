@@ -39,6 +39,7 @@ class SafeProposal:
         tuple[str, list[int]]
     ]  # List of tuples(<oracle_address>, <args>), e.g. [("0x123", [1e18]), ...]
     transaction: Optional[PendingTransactionInfo]
+    is_newly_created: bool  # True if TX was newly created, False if already existed
 
 
 async def main():
@@ -83,7 +84,11 @@ async def main():
 
             # Send message with safe proposal for each source
             if message:
-                if config.telegram_proposal_message_prefix:
+                # Only add prefix for newly created transactions
+                if (
+                    config.telegram_proposal_message_prefix
+                    and safe_proposal.is_newly_created
+                ):
                     message = config.telegram_proposal_message_prefix + "\n" + message
 
                 await send_message(
@@ -234,7 +239,7 @@ def compose_safe_tx_confirmations(proposal: SafeProposal) -> tuple[str, bool]:
     confirmations = len(proposal.transaction.confirmations)
     required_confirmations = proposal.transaction.number_of_required_confirmations
     return (
-        f"Confirmations: {confirmations}/{required_confirmations}",
+        f"Confirmations: {confirmations} / {required_confirmations}",
         confirmations >= required_confirmations,
     )
 
@@ -290,8 +295,11 @@ def propose_tx_to_update_oracle(
             continue
 
         transaction = None
+        is_newly_created = False
         try:
-            transaction = propose_tx_if_needed(contract_abi, method, calls, source)
+            transaction, is_newly_created = propose_tx_if_needed(
+                contract_abi, method, calls, source
+            )
         except Exception as e:
             error_message = str(e)
             # Mask all source-related sensitive data (RPC URL, private key, API key)
@@ -305,6 +313,7 @@ def propose_tx_to_update_oracle(
             deployment_names=deployment_names,
             calls=calls,
             transaction=transaction,
+            is_newly_created=is_newly_created,
         )
         result.append((source, proposal))
 

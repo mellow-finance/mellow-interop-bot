@@ -120,7 +120,7 @@ def _get_queued_transaction_for_source(
 
 def propose_tx_if_needed(
     contract_name: str, method: str, calls: list[tuple[str, list]], source: SourceConfig
-) -> PendingTransactionInfo:
+) -> tuple[PendingTransactionInfo, bool]:
     print(
         f"Starting proposing transaction... source: '{source.name}', contract: '{contract_name}', method: '{method}', calls: {calls}..."
     )
@@ -152,7 +152,7 @@ def propose_tx_if_needed(
         print_colored(
             f"Transaction '{queued_transaction.id}' is already queued", "yellow"
         )
-        return queued_transaction
+        return queued_transaction, False
 
     print(f"Proposing transaction: {safe_tx}...")
     tx_hash = _propose_tx_for_source(safe_tx, source)
@@ -173,7 +173,7 @@ def propose_tx_if_needed(
                 raise Exception(
                     f"Transaction ID mismatch: expected {tx_id}, got {transaction.id}"
                 )
-            return transaction
+            return transaction, True
 
     raise Exception(
         f"Transaction not found after {attempts} attempts. Expected transaction hash: {tx_hash}"
