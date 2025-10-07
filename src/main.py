@@ -89,7 +89,7 @@ async def main():
                     config.telegram_proposal_message_prefix
                     and safe_proposal.is_newly_created
                 ):
-                    message = config.telegram_proposal_message_prefix + "\n" + message
+                    message = config.telegram_proposal_message_prefix.replace("_", "\\_") + "\n" + message
 
                 await send_message(
                     config.telegram_bot_api_key,
