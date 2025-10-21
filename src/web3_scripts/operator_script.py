@@ -27,6 +27,7 @@ def run(
         source_core_helper,
         target_core_helper,
         oracle_expiry_threshold_seconds=3600,
+        oracle_recent_update_threshold_seconds=0,
     )
 
     if oracle_validation_result.transfer_in_progress:
@@ -126,7 +127,7 @@ def run(
         if data[0] > 0:
             value = target_helper.quotePushToSource(target_core_address).call()
             required_actions.append(
-                f"TargetCore({target_core.address}).pushToSource{{value: {value}}}()"
+                f"TargetCore({target_core.address}).pushToSource{{value: {value}}}({data[0]})"
             )
             required_actions.append(
                 "Please, wait for LayerZero tx finalization (~5-10 minutes) and rerun script again..."
