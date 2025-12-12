@@ -122,6 +122,12 @@ Environment variables
 OPERATOR_PK=<pk> DEPLOYMENTS=<source:symbol> python ./src/web3_scripts/operator_bot.py
 ```
 
+Run non-interactively (skip the confirmation prompt):
+
+```bash
+NON_INTERACTIVE=true OPERATOR_PK=<pk> DEPLOYMENTS=<source:symbol> python ./src/web3_scripts/operator_bot.py
+```
+
 If you want to run a script on a newly added deployment, you may need to validate it first by executing the following command:
 
 ```bash
@@ -134,3 +140,4 @@ Same `SOURCE_RATIO_D3` and `MAX_SOURCE_RATIO_D3`, plus:
 
 - OPERATOR_PK - Private key to send transactions (required)
 - DEPLOYMENTS - Comma-separated list of deployments for which the script needs to be run (required, example: `BSC:CYC,FRAXTAL:FRAX`). See the `config.json` for all avaiable pairs.
+- NON_INTERACTIVE - If set to `true`, skips the interactive confirmation prompt (default: prompt enabled).

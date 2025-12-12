@@ -49,6 +49,7 @@ def run(
         source_core_helper,
         target_core_helper,
         oracle_expiry_threshold_seconds=3600,
+        oracle_recent_update_threshold_seconds=0,
     )
 
     if oracle_validation_result.transfer_in_progress:
@@ -298,19 +299,26 @@ if __name__ == "__main__":
         print(f"\tTarget Core Helper: {add_color(config.target_core_helper, 'yellow')}")
         print(f"\tTarget Core: {add_color(deployment.target_core, 'yellow')}")
 
-    # Wait for user confirmation
-    try:
-        user_input = (
-            input("\nEnter 'y' to continue, any other key to quit: ").strip().lower()
+    if os.getenv("NON_INTERACTIVE", "").strip().lower() == "true":
+        print_colored(
+            "NON_INTERACTIVE enabled; skipping confirmation prompt.", "yellow"
         )
-        if user_input == "y":
-            print("Continuing with operations...")
-        else:
-            print("Operation cancelled by user.")
+    else:
+        # Wait for user confirmation
+        try:
+            user_input = (
+                input("\nEnter 'y' to continue, any other key to quit: ")
+                .strip()
+                .lower()
+            )
+            if user_input == "y":
+                print("Continuing with operations...")
+            else:
+                print("Operation cancelled by user.")
+                sys.exit(0)
+        except KeyboardInterrupt:
+            print("\nOperation cancelled by user (Ctrl+C).")
             sys.exit(0)
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user (Ctrl+C).")
-        sys.exit(0)
 
     for source, deployment in deployments:
         print(f"\nProcessing deployment {deployment.name} of {source.name}...")
