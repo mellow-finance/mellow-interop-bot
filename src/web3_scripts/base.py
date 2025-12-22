@@ -37,7 +37,7 @@ def get_contract(w3: Web3, address: str, name: str) -> Contract:
 
 def execute(contractFunction, value: int, operator_pk: str):
     operator_address = Account.from_key(operator_pk).address
-    w3 = contractFunction.web3
+    w3 = contractFunction.w3
 
     operator_balance = w3.eth.get_balance(operator_address)
     if operator_balance < value:
@@ -55,7 +55,7 @@ def execute(contractFunction, value: int, operator_pk: str):
 
     try:
         gas = (
-            contractFunction.estimateGas(
+            contractFunction.estimate_gas(
                 {"from": Web3.to_checksum_address(operator_address), "value": value}
             )
             * 105
@@ -74,20 +74,20 @@ def execute(contractFunction, value: int, operator_pk: str):
             )
         )
 
-    transaction = contractFunction.buildTransaction(
+    transaction = contractFunction.build_transaction(
         {
             "gas": gas,
             "maxFeePerGas": base_fee + max_priority_fee,
             "maxPriorityFeePerGas": max_priority_fee,
             "value": value,
             "from": operator_address,
-            "nonce": w3.eth.getTransactionCount(operator_address),
+            "nonce": w3.eth.get_transaction_count(operator_address),
         }
     )
-    signed_txn = w3.eth.account.signTransaction(transaction, private_key=operator_pk)
-    tx = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+    signed_txn = w3.eth.account.sign_transaction(transaction, private_key=operator_pk)
+    tx = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print("Transaction sent: {}".format(tx.hex()))
-    receipt = w3.eth.waitForTransactionReceipt(tx)
+    receipt = w3.eth.wait_for_transaction_receipt(tx)
     print(
         "Transaction mined in block: {}. Chain id: {}".format(
             receipt.blockNumber, w3.eth.chain_id
