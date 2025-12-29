@@ -17,6 +17,11 @@
           "name": "CYC",
           "source-core": "0xc8e046fe778BE29572016d1f703e9B2ff77a207D",
           "target-core": "0xAdEcB7647C3370A40c9F06FB8F5F709c87324932"
+        },
+        {
+          "name": "SOLV",
+          "source-core": "0x7C942105Be8Be5B3cbB7309120b0C0C16ee3e536",
+          "target-core": "0x927F0604c60924399EB44f54C4c333Ed1Ef21B45"
         }
       ],
       "safe-global": {

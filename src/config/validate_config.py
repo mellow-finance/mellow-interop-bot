@@ -41,27 +41,64 @@ def validate_source(target_w3: Web3, source: SourceConfig):
     validate_rpc_url(w3, source.name)
     validate_source_helper(w3, source)
     validate_deployments(w3, target_w3, source)
-    validate_safe_global(w3, source)
+    validate_all_safe_globals(w3, source)
 
 
-def validate_safe_global(w3: Web3, source: SourceConfig):
-    safe = source.safe_global
+def validate_all_safe_globals(w3: Web3, source: SourceConfig):
+    """
+    Validate all unique SafeGlobal configs for a source chain.
+    This includes the chain-level safe_global and any deployment-level overrides.
+    Each unique safe address is validated only once.
+    """
+    # Track validated safe addresses to avoid duplicate validation
+    validated_safe_addresses = set()
+
+    # Validate chain-level safe_global
+    if source.safe_global and source.safe_global.safe_address:
+        validate_safe_global(w3, source.safe_global, f"{source.name} (chain-level)")
+        validated_safe_addresses.add(source.safe_global.safe_address)
+    else:
+        print(
+            f"No chain-level safe global config is set for {source.name}, skipping..."
+        )
+
+    # Validate deployment-level safe_global overrides (if different from chain-level)
+    for deployment in source.deployments:
+        if deployment.safe_global and deployment.safe_global.safe_address:
+            if deployment.safe_global.safe_address not in validated_safe_addresses:
+                validate_safe_global(
+                    w3,
+                    deployment.safe_global,
+                    f"{source.name}/{deployment.name} (deployment override)",
+                )
+                validated_safe_addresses.add(deployment.safe_global.safe_address)
+
+
+def validate_safe_global(w3: Web3, safe: SafeGlobal, label: str):
+    """
+    Validate a SafeGlobal configuration.
+
+    Args:
+        w3: Web3 instance for the source chain
+        safe: SafeGlobal configuration to validate
+        label: Label for error messages (e.g., "BSC (chain-level)" or "BSC/CYC (deployment override)")
+    """
     if not safe:
-        print(f"No safe global config is set for {source.name}, skipping validation...")
+        print(f"No safe global config is set for {label}, skipping validation...")
         return
 
     if not safe.safe_address:
-        print(f"No safe address is set for {source.name}, skipping validation...")
+        print(f"No safe address is set for {label}, skipping validation...")
         return
 
-    print(f"Validating safe global {safe.safe_address}...")
+    print(f"Validating safe global {safe.safe_address} for {label}...")
     safe_contract = get_contract(w3, safe.safe_address, "Safe")
 
     min_version = Version("1.3.0")
     version = Version(safe_contract.functions.VERSION().call())
     if version < min_version:
         raise Exception(
-            f"Safe contract version {version} is not supported, support for {min_version} or higher is required"
+            f"Safe contract version {version} is not supported for {label}, support for {min_version} or higher is required"
         )
 
     if safe.proposer_private_key:
@@ -78,7 +115,7 @@ def validate_safe_global(w3: Web3, source: SourceConfig):
         pass
     elif not validate_safe_transaction_api_url(safe):
         # Mask API URL which might contain credentials
-        error_msg = f"Invalid safe API URL: {safe.api_url}"
+        error_msg = f"Invalid safe API URL for {label}: {safe.api_url}"
         masked_error = mask_url_credentials(error_msg, safe.api_url)
         raise Exception(masked_error)
 
