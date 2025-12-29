@@ -1,15 +1,8 @@
 import os
 import json
 from web3 import Web3, constants
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class Deployment:
-    name: str
-    source_core: str
-    target_core: str
 
 
 @dataclass(frozen=True)
@@ -20,6 +13,38 @@ class SafeGlobal:
     api_key: str = None
     web_client_url: str = None
     eip_3770: str = None
+
+
+@dataclass(frozen=True)
+class Deployment:
+    name: str
+    source_core: str
+    target_core: str
+    safe_global: Optional[SafeGlobal] = None
+
+
+def _ensure_safe_global_fields(
+    safe_global: SafeGlobal, source_name: str, label: str
+) -> None:
+    """
+    Validate that all required SafeGlobal fields are present after merging overrides.
+
+    Raises:
+        ValueError: if any required field is missing or empty.
+    """
+    required_fields = {
+        "safe_address": safe_global.safe_address,
+        "proposer_private_key": safe_global.proposer_private_key,
+        "api_url": safe_global.api_url,
+        "web_client_url": safe_global.web_client_url,
+    }
+
+    missing = [name for name, value in required_fields.items() if not value]
+    if missing:
+        field_list = ", ".join(missing)
+        raise ValueError(
+            f"Safe config for {source_name} ({label}) is missing required field(s): {field_list}"
+        )
 
 
 @dataclass(frozen=True)
@@ -213,6 +238,67 @@ def _parse_telegram_owners(telegram_owner_nicknames: str) -> Dict[str, str]:
     return result
 
 
+def _merge_safe_global_overrides(
+    base: Optional[SafeGlobal],
+    overrides_dict: Optional[Dict[str, Any]],
+    source_name: str,
+) -> Optional[SafeGlobal]:
+    """
+    Merge safe-global-overrides with the chain-level safe_global config.
+
+    If overrides_dict is None or empty, returns base as-is.
+    For each field in overrides_dict, it takes precedence over the base value.
+    Fields not specified in overrides fall back to base values.
+
+    Args:
+        base: The chain-level SafeGlobal config (can be None)
+        overrides_dict: Dictionary of override values from deployment config
+        source_name: Name of the source (used for eip_3770 fallback)
+
+    Returns:
+        Merged SafeGlobal or None if both base and overrides are empty
+    """
+    if not overrides_dict:
+        return base
+
+    if base is None:
+        # No base config, create from overrides only
+        # Handle eip_3770 fallback: use lowercased source name if not provided
+        eip_3770 = overrides_dict.get("eip_3770")
+        if eip_3770 is None:
+            eip_3770 = source_name.lower()
+
+        merged = SafeGlobal(
+            safe_address=overrides_dict.get("safe_address", ""),
+            proposer_private_key=overrides_dict.get("proposer_private_key", ""),
+            api_url=overrides_dict.get("api_url", ""),
+            api_key=overrides_dict.get("api_key"),
+            web_client_url=overrides_dict.get("web_client_url"),
+            eip_3770=eip_3770,
+        )
+        _ensure_safe_global_fields(merged, source_name, "deployment override")
+        return merged
+
+    # Merge: overrides take precedence, fall back to base values
+    # Handle eip_3770 fallback: use lowercased source name if not provided
+    eip_3770 = overrides_dict.get("eip_3770", base.eip_3770)
+    if eip_3770 is None:
+        eip_3770 = source_name.lower()
+
+    merged = SafeGlobal(
+        safe_address=overrides_dict.get("safe_address", base.safe_address),
+        proposer_private_key=overrides_dict.get(
+            "proposer_private_key", base.proposer_private_key
+        ),
+        api_url=overrides_dict.get("api_url", base.api_url),
+        api_key=overrides_dict.get("api_key", base.api_key),
+        web_client_url=overrides_dict.get("web_client_url", base.web_client_url),
+        eip_3770=eip_3770,
+    )
+    _ensure_safe_global_fields(merged, source_name, "deployment override")
+    return merged
+
+
 def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
     """
     Convert a dictionary to a typed Config object.
@@ -220,26 +306,19 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
 
     # Convert source configurations
     def create_source_config(source_dict: Dict[str, Any]) -> SourceConfig:
-        deployments = tuple(
-            Deployment(
-                name=dep["name"],
-                source_core=dep["source_core"],
-                target_core=dep["target_core"],
-            )
-            for dep in source_dict["deployments"]
-        )
+        source_name = source_dict["name"]
 
-        # Handle optional safe_global configuration
-        safe_global = None
+        # Handle optional chain-level safe_global configuration
+        chain_safe_global = None
         if "safe_global" in source_dict:
             safe_global_dict = source_dict["safe_global"]
 
             # Handle eip_3770 fallback: use lowercased source name if not provided
             eip_3770 = safe_global_dict.get("eip_3770")
             if eip_3770 is None:
-                eip_3770 = source_dict["name"].lower()
+                eip_3770 = source_name.lower()
 
-            safe_global = SafeGlobal(
+            chain_safe_global = SafeGlobal(
                 safe_address=safe_global_dict["safe_address"],
                 proposer_private_key=safe_global_dict["proposer_private_key"],
                 api_url=safe_global_dict["api_url"],
@@ -248,12 +327,31 @@ def _dict_to_config(config_dict: Dict[str, Any]) -> Config:
                 eip_3770=eip_3770,
             )
 
+        # Create deployments with optional safe_global_overrides merged
+        def create_deployment(dep: Dict[str, Any]) -> Deployment:
+            # Check for safe_global_overrides and merge with chain-level config
+            overrides_dict = dep.get("safe_global_overrides")
+            deployment_safe_global = _merge_safe_global_overrides(
+                chain_safe_global, overrides_dict, source_name
+            )
+
+            return Deployment(
+                name=dep["name"],
+                source_core=dep["source_core"],
+                target_core=dep["target_core"],
+                safe_global=deployment_safe_global,
+            )
+
+        deployments = tuple(
+            create_deployment(dep) for dep in source_dict["deployments"]
+        )
+
         return SourceConfig(
-            name=source_dict["name"],
+            name=source_name,
             rpc=source_dict["rpc"],
             source_core_helper=source_dict["source_core_helper"],
             deployments=deployments,
-            safe_global=safe_global,
+            safe_global=chain_safe_global,
         )
 
     # Convert all sources

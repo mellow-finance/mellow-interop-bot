@@ -36,18 +36,34 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             eip_3770="bsc",
         )
 
+        # Create mock Deployment objects (with safe_global from chain level)
+        self.deployment_1 = Deployment(
+            name="ETH-BSC",
+            source_core="0x2222222222222222222222222222222222222222",
+            target_core="0x3333333333333333333333333333333333333333",
+            safe_global=self.safe_global_1,
+        )
+
+        self.deployment_2 = Deployment(
+            name="BSC-ETH",
+            source_core="0x5555555555555555555555555555555555555555",
+            target_core="0x6666666666666666666666666666666666666666",
+            safe_global=self.safe_global_2,
+        )
+
+        self.deployment_no_safe = Deployment(
+            name="Polygon-Deployment",
+            source_core="0x8888888888888888888888888888888888888888",
+            target_core="0x9999999999999999999999999999999999999999",
+            safe_global=None,
+        )
+
         # Create mock SourceConfig objects
         self.source_config_1 = SourceConfig(
             name="Ethereum",
             rpc="https://eth-rpc.example.com",
             source_core_helper="0x1111111111111111111111111111111111111111",
-            deployments=(
-                Deployment(
-                    name="ETH-BSC",
-                    source_core="0x2222222222222222222222222222222222222222",
-                    target_core="0x3333333333333333333333333333333333333333",
-                ),
-            ),
+            deployments=(self.deployment_1,),
             safe_global=self.safe_global_1,
         )
 
@@ -55,13 +71,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             name="BSC",
             rpc="https://bsc-rpc.example.com",
             source_core_helper="0x4444444444444444444444444444444444444444",
-            deployments=(
-                Deployment(
-                    name="BSC-ETH",
-                    source_core="0x5555555555555555555555555555555555555555",
-                    target_core="0x6666666666666666666666666666666666666666",
-                ),
-            ),
+            deployments=(self.deployment_2,),
             safe_global=self.safe_global_2,
         )
 
@@ -70,7 +80,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             name="Polygon",
             rpc="https://polygon-rpc.example.com",
             source_core_helper="0x7777777777777777777777777777777777777777",
-            deployments=(),
+            deployments=(self.deployment_no_safe,),
             safe_global=None,
         )
 
@@ -147,28 +157,45 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         # Create mock oracle data
         self.oracle_data_expired = OracleData(
-            name="ETH-BSC Oracle 1", validation=self.oracle_validation_expired
+            name="ETH-BSC Oracle 1",
+            deployment=self.deployment_1,
+            validation=self.oracle_validation_expired,
         )
 
         self.oracle_data_incorrect = OracleData(
-            name="ETH-BSC Oracle 2", validation=self.oracle_validation_incorrect
+            name="ETH-BSC Oracle 2",
+            deployment=self.deployment_1,
+            validation=self.oracle_validation_incorrect,
         )
 
         self.oracle_data_transfer_in_progress = OracleData(
             name="BSC-ETH Oracle 1",
+            deployment=self.deployment_2,
             validation=self.oracle_validation_transfer_in_progress,
         )
 
         self.oracle_data_no_update_needed = OracleData(
-            name="BSC-ETH Oracle 2", validation=self.oracle_validation_no_update_needed
+            name="BSC-ETH Oracle 2",
+            deployment=self.deployment_2,
+            validation=self.oracle_validation_no_update_needed,
         )
 
         self.oracle_data_bsc_expired = OracleData(
-            name="BSC-ETH Oracle 3", validation=self.oracle_validation_bsc_expired
+            name="BSC-ETH Oracle 3",
+            deployment=self.deployment_2,
+            validation=self.oracle_validation_bsc_expired,
         )
 
         self.oracle_data_no_validation = OracleData(
-            name="Failed Oracle", validation=None  # Should be skipped
+            name="Failed Oracle",
+            deployment=self.deployment_1,
+            validation=None,  # Should be skipped
+        )
+
+        self.oracle_data_no_safe = OracleData(
+            name="No Safe Oracle",
+            deployment=self.deployment_no_safe,
+            validation=self.oracle_validation_expired,
         )
 
         # Create mock pending transaction
@@ -201,10 +228,13 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         # Verify result structure
         self.assertEqual(len(result), 1)
-        source, proposal = result[0]
+        source, safe_global, proposal = result[0]
 
         # Verify source is correct
         self.assertEqual(source, self.source_config_1)
+
+        # Verify safe_global is correct
+        self.assertEqual(safe_global, self.safe_global_1)
 
         # Verify proposal structure
         self.assertIsInstance(proposal, SafeProposal)
@@ -224,6 +254,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             "setValue",
             [("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", [1100000000000000000])],
             self.source_config_1,
+            self.safe_global_1,
         )
 
     @patch("main.propose_tx_if_needed")
@@ -240,10 +271,13 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         # Verify result structure
         self.assertEqual(len(result), 1)
-        source, proposal = result[0]
+        source, safe_global, proposal = result[0]
 
         # Verify source is correct
         self.assertEqual(source, self.source_config_1)
+
+        # Verify safe_global is correct
+        self.assertEqual(safe_global, self.safe_global_1)
 
         # Verify proposal has both oracles batched
         self.assertEqual(proposal.method, "setValue")
@@ -268,6 +302,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertEqual(args[1], "setValue")
         self.assertEqual(len(args[2]), 2)
         self.assertEqual(args[3], self.source_config_1)
+        self.assertEqual(args[4], self.safe_global_1)
 
     @patch("main.propose_tx_if_needed")
     def test_multiple_sources_separate_proposals(self, mock_propose_tx):
@@ -285,8 +320,8 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertEqual(len(result), 2)
 
         # Extract sources and proposals
-        sources = [source for source, _ in result]
-        proposals = [proposal for _, proposal in result]
+        sources = [source for source, _, _ in result]
+        proposals = [proposal for _, _, proposal in result]
 
         # Verify both sources are present and unique
         self.assertIn(self.source_config_1, sources)
@@ -294,7 +329,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertEqual(len(set(sources)), 2)  # Ensure sources are unique
 
         # Verify each proposal has correct data
-        for source, proposal in result:
+        for source, safe_global, proposal in result:
             self.assertIsInstance(proposal, SafeProposal)
             self.assertEqual(proposal.method, "setValue")
             self.assertEqual(len(proposal.calls), 1)
@@ -302,6 +337,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
             self.assertTrue(proposal.is_newly_created)
 
             if source == self.source_config_1:
+                self.assertEqual(safe_global, self.safe_global_1)
                 self.assertEqual(proposal.deployment_names, ["ETH-BSC Oracle 1"])
                 self.assertEqual(
                     proposal.calls[0],
@@ -311,6 +347,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
                     ),
                 )
             elif source == self.source_config_2:
+                self.assertEqual(safe_global, self.safe_global_2)
                 self.assertEqual(proposal.deployment_names, ["BSC-ETH Oracle 3"])
                 self.assertEqual(
                     proposal.calls[0],
@@ -338,7 +375,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
                 self.source_config_2,
                 self.oracle_data_no_update_needed,
             ),  # Should be skipped
-            (self.source_config_2, self.oracle_data_no_validation),  # Should be skipped
+            (self.source_config_1, self.oracle_data_no_validation),  # Should be skipped
             (self.source_config_2, self.oracle_data_bsc_expired),  # Should be included
         ]
 
@@ -351,7 +388,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         source1_proposal = None
         source2_proposal = None
 
-        for source, proposal in result:
+        for source, safe_global, proposal in result:
             if source == self.source_config_1:
                 source1_proposal = proposal
             elif source == self.source_config_2:
@@ -373,10 +410,10 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         self.assertEqual(mock_propose_tx.call_count, 2)
 
     @patch("main.propose_tx_if_needed")
-    def test_source_without_safe_global_skipped(self, mock_propose_tx):
-        """Test that sources without safe_global configuration are skipped"""
+    def test_deployment_without_safe_global_skipped(self, mock_propose_tx):
+        """Test that deployments without safe_global configuration are skipped"""
         oracle_validation_results = [
-            (self.source_config_no_safe, self.oracle_data_expired)  # Should be skipped
+            (self.source_config_no_safe, self.oracle_data_no_safe)  # Should be skipped
         ]
 
         result = propose_tx_to_update_oracle(oracle_validation_results)
@@ -390,9 +427,21 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
     @patch("main.propose_tx_if_needed")
     def test_no_oracles_need_update(self, mock_propose_tx):
         """Test when no oracles need updates"""
+        # Create oracle data with deployment that has safe_global but no update needed
+        oracle_data_transfer_for_eth = OracleData(
+            name="ETH Transfer",
+            deployment=self.deployment_1,
+            validation=self.oracle_validation_transfer_in_progress,
+        )
+        oracle_data_no_update_for_eth = OracleData(
+            name="ETH No Update",
+            deployment=self.deployment_1,
+            validation=self.oracle_validation_no_update_needed,
+        )
+
         oracle_validation_results = [
-            (self.source_config_1, self.oracle_data_transfer_in_progress),
-            (self.source_config_1, self.oracle_data_no_update_needed),
+            (self.source_config_1, oracle_data_transfer_for_eth),
+            (self.source_config_1, oracle_data_no_update_for_eth),
             (self.source_config_1, self.oracle_data_no_validation),
         ]
 
@@ -416,9 +465,10 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         # Should still return a result but with transaction=None
         self.assertEqual(len(result), 1)
-        source, proposal = result[0]
+        source, safe_global, proposal = result[0]
 
         self.assertEqual(source, self.source_config_1)
+        self.assertEqual(safe_global, self.safe_global_1)
         self.assertEqual(proposal.method, "setValue")
         self.assertEqual(len(proposal.calls), 1)
         self.assertIsNone(proposal.transaction)  # Should be None due to exception
@@ -448,7 +498,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         # Should still return a result
         self.assertEqual(len(result), 1)
-        source, proposal = result[0]
+        source, safe_global, proposal = result[0]
         self.assertIsNone(proposal.transaction)
         self.assertFalse(proposal.is_newly_created)
 
@@ -476,8 +526,8 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
         mock_propose_tx.assert_not_called()
 
     @patch("main.propose_tx_if_needed")
-    def test_grouping_by_source_correctness(self, mock_propose_tx):
-        """Test that grouping by source works correctly with same source appearing multiple times"""
+    def test_grouping_by_safe_address_correctness(self, mock_propose_tx):
+        """Test that grouping by safe address works correctly with same source appearing multiple times"""
         mock_propose_tx.return_value = (self.mock_pending_transaction, True)
 
         # Same source appears multiple times in different positions
@@ -489,11 +539,11 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         result = propose_tx_to_update_oracle(oracle_validation_results)
 
-        # Should have exactly 2 results (one per unique source)
+        # Should have exactly 2 results (one per unique safe address)
         self.assertEqual(len(result), 2)
 
         # Extract sources
-        result_sources = [source for source, _ in result]
+        result_sources = [source for source, _, _ in result]
 
         # Verify each source appears exactly once
         self.assertEqual(len(set(result_sources)), 2)
@@ -502,7 +552,7 @@ class TestProposeTxToUpdateOracle(unittest.TestCase):
 
         # Find the proposal for source_config_1
         source1_proposal = None
-        for source, proposal in result:
+        for source, safe_global, proposal in result:
             if source == self.source_config_1:
                 source1_proposal = proposal
                 break
