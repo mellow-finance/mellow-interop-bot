@@ -42,13 +42,13 @@ def _create_signed_safe_tx(
     return safe_tx
 
 
-def _create_signed_safe_tx_for_source(
-    source: SourceConfig, to: str, calldata: str, operation: int
+def _create_signed_safe_tx_for_safe(
+    rpc: str, safe_global: SafeGlobal, to: str, calldata: str, operation: int
 ) -> SafeTx:
     safe_tx = _create_signed_safe_tx(
-        source.rpc,
-        source.safe_global.safe_address,
-        source.safe_global.proposer_private_key,
+        rpc,
+        safe_global.safe_address,
+        safe_global.proposer_private_key,
         to,
         calldata,
         operation,
@@ -70,33 +70,31 @@ def _is_transaction_api(safe: SafeGlobal) -> bool:
         return False
 
 
-def _propose_tx_for_source(safe_tx: SafeTx, source: SourceConfig):
-    if _is_transaction_api(source.safe_global):
+def _propose_tx_for_safe(safe_tx: SafeTx, safe_global: SafeGlobal):
+    if _is_transaction_api(safe_global):
         print_colored(
             f"Proposing transaction using Transaction API: {safe_tx}", "yellow"
         )
         return transaction_api.propose_safe_tx(
-            source.safe_global.api_url, source.safe_global.api_key, safe_tx
+            safe_global.api_url, safe_global.api_key, safe_tx
         )
     else:
         print_colored(
             f"Proposing transaction using Client Gateway API: {safe_tx}", "yellow"
         )
-        return client_gateway_api.propose_safe_tx(source.safe_global.api_url, safe_tx)
+        return client_gateway_api.propose_safe_tx(safe_global.api_url, safe_tx)
 
 
-def _get_queued_transaction_for_source(
-    to: str, calldata: str, source: SourceConfig
+def _get_queued_transaction_for_safe(
+    to: str, calldata: str, rpc: str, safe_global: SafeGlobal
 ) -> PendingTransactionInfo:
-    w3 = get_w3(source.rpc)
+    w3 = get_w3(rpc)
     chain_id = w3.eth.chain_id
-    safe_contract = get_contract(
-        w3, address=source.safe_global.safe_address, name="Safe"
-    )
-    api_url = source.safe_global.api_url
-    api_key = source.safe_global.api_key
-    safe_address = source.safe_global.safe_address
-    if _is_transaction_api(source.safe_global):
+    safe_contract = get_contract(w3, address=safe_global.safe_address, name="Safe")
+    api_url = safe_global.api_url
+    api_key = safe_global.api_key
+    safe_address = safe_global.safe_address
+    if _is_transaction_api(safe_global):
         nonce = safe_contract.functions.nonce().call()
         return transaction_api.get_queued_transaction(
             api_url,
@@ -119,15 +117,19 @@ def _get_queued_transaction_for_source(
 
 
 def propose_tx_if_needed(
-    contract_name: str, method: str, calls: list[tuple[str, list]], source: SourceConfig
+    contract_name: str,
+    method: str,
+    calls: list[tuple[str, list]],
+    source: SourceConfig,
+    safe_global: SafeGlobal,
 ) -> tuple[PendingTransactionInfo, bool]:
     print(
-        f"Starting proposing transaction... source: '{source.name}', contract: '{contract_name}', method: '{method}', calls: {calls}..."
+        f"Starting proposing transaction... source: '{source.name}', safe: '{safe_global.safe_address}', contract: '{contract_name}', method: '{method}', calls: {calls}..."
     )
 
     multi_send = len(calls) > 1
     if multi_send:
-        to = resolve_multi_send_contract(source.rpc, source.safe_global.safe_address)
+        to = resolve_multi_send_contract(source.rpc, safe_global.safe_address)
         calls_with_calldata = [
             (to, _create_calldata(contract_name, method, args)) for to, args in calls
         ]
@@ -144,10 +146,14 @@ def propose_tx_if_needed(
             f"Going to propose single transaction to {to} with args: {args} (calldata: {calldata})..."
         )
 
-    safe_tx = _create_signed_safe_tx_for_source(source, to, calldata, operation)
+    safe_tx = _create_signed_safe_tx_for_safe(
+        source.rpc, safe_global, to, calldata, operation
+    )
 
     print(f"Trying to find existing transaction...")
-    queued_transaction = _get_queued_transaction_for_source(to, calldata, source)
+    queued_transaction = _get_queued_transaction_for_safe(
+        to, calldata, source.rpc, safe_global
+    )
     if queued_transaction:
         print_colored(
             f"Transaction '{queued_transaction.id}' is already queued", "yellow"
@@ -155,7 +161,7 @@ def propose_tx_if_needed(
         return queued_transaction, False
 
     print(f"Proposing transaction: {safe_tx}...")
-    tx_hash = _propose_tx_for_source(safe_tx, source)
+    tx_hash = _propose_tx_for_safe(safe_tx, safe_global)
     print_colored(f"Transaction proposed: {tx_hash}", "green")
 
     # Transaction might not be immediately created, try getting it again with several attempts
@@ -166,9 +172,11 @@ def propose_tx_if_needed(
         print(
             f"Trying to get transaction: {tx_hash}... (attempt {attempt + 1} of {attempts})"
         )
-        transaction = _get_queued_transaction_for_source(to, calldata, source)
+        transaction = _get_queued_transaction_for_safe(
+            to, calldata, source.rpc, safe_global
+        )
         if transaction:
-            tx_id = f"multisig_{source.safe_global.safe_address}_{tx_hash}"
+            tx_id = f"multisig_{safe_global.safe_address}_{tx_hash}"
             if transaction.id != tx_id:
                 raise Exception(
                     f"Transaction ID mismatch: expected {tx_id}, got {transaction.id}"

@@ -10,6 +10,7 @@ from config import (
     Config,
     SourceConfig,
     SafeGlobal,
+    Deployment,
     mask_source_sensitive_data,
     mask_url_credentials,
     mask_all_sensitive_config_data,
@@ -28,6 +29,7 @@ from web3_scripts.base import print_colored
 @dataclass
 class OracleData:
     name: str
+    deployment: Deployment
     validation: Optional[OracleValidationResult]
 
 
@@ -74,11 +76,11 @@ async def main():
         safe_proposals = propose_tx_to_update_oracle(oracle_validation_results)
 
         # Compose message with safe data
-        for source, safe_proposal in safe_proposals:
+        for source, safe_global, safe_proposal in safe_proposals:
             message = compose_safe_proposal_message(
                 config.telegram_owner_nicknames,
                 source.name,
-                source.safe_global,
+                safe_global,
                 safe_proposal,
             )
 
@@ -250,22 +252,35 @@ def compose_safe_tx_confirmations(proposal: SafeProposal) -> tuple[str, bool]:
 
 def propose_tx_to_update_oracle(
     oracle_validation_results: List[Tuple[SourceConfig, OracleData]],
-) -> List[Tuple[SourceConfig, SafeProposal]]:
-    result: List[Tuple[SourceConfig, SafeProposal]] = []
+) -> List[Tuple[SourceConfig, SafeGlobal, SafeProposal]]:
+    result: List[Tuple[SourceConfig, SafeGlobal, SafeProposal]] = []
 
-    # Group validation results by source.name
-    grouped_data: defaultdict[SourceConfig, List[OracleData]] = defaultdict(list)
+    # Group validation results by effective Safe identity (chain prefix + address)
+    # Key: (eip_3770, safe_address) -> List of oracle data that share the same Safe
+    grouped_data: defaultdict[Tuple[str, str], List[OracleData]] = defaultdict(list)
+    safe_global_map: Dict[Tuple[str, str], SafeGlobal] = {}
+    source_map: Dict[Tuple[str, str], SourceConfig] = {}
+
     for source, oracle_data in oracle_validation_results:
-        grouped_data[source].append(oracle_data)
-
-    # Process each source
-    for source, oracle_data_list in grouped_data.items():
-        safe_global = source.safe_global
-        if safe_global is None:
+        # Get the effective safe_global for this deployment (deployment override or chain-level)
+        effective_safe = oracle_data.deployment.safe_global
+        if effective_safe is None:
             continue
 
-        if not source.safe_global.proposer_private_key:
-            print(f"Skipping proposal for {source.name} because proposer pk is not set")
+        key = (effective_safe.eip_3770, effective_safe.safe_address)
+        grouped_data[key].append(oracle_data)
+        safe_global_map[key] = effective_safe
+        source_map.setdefault(key, source)
+
+    # Process each Safe group
+    for (safe_eip_3770, safe_address), oracle_data_list in grouped_data.items():
+        safe_global = safe_global_map[(safe_eip_3770, safe_address)]
+        source = source_map[(safe_eip_3770, safe_address)]
+
+        if not safe_global.proposer_private_key:
+            print(
+                f"Skipping proposal for {source.name} (safe: {safe_address}) because proposer pk is not set"
+            )
             continue
 
         contract_abi = "Oracle"
@@ -295,21 +310,24 @@ def propose_tx_to_update_oracle(
             calls.append((to, args))
 
         if len(calls) == 0:
-            print(f"No oracle updates required for source {source.name}")
+            print(
+                f"No oracle updates required for source {source.name} (safe: {safe_address})"
+            )
             continue
 
         transaction = None
         is_newly_created = False
         try:
             transaction, is_newly_created = propose_tx_if_needed(
-                contract_abi, method, calls, source
+                contract_abi, method, calls, source, safe_global
             )
         except Exception as e:
             error_message = str(e)
             # Mask all source-related sensitive data (RPC URL, private key, API key)
             masked_error = mask_source_sensitive_data(error_message, source)
             print_colored(
-                f"Error proposing tx for source {source.name}: {masked_error}", "red"
+                f"Error proposing tx for source {source.name} (safe: {safe_address}): {masked_error}",
+                "red",
             )
 
         proposal = SafeProposal(
@@ -319,7 +337,7 @@ def propose_tx_to_update_oracle(
             transaction=transaction,
             is_newly_created=is_newly_created,
         )
-        result.append((source, proposal))
+        result.append((source, safe_global, proposal))
 
     return result
 
@@ -351,7 +369,11 @@ def validate_oracles(
                 print(
                     f"Error validating oracle for source {source.name}: {masked_error}"
                 )
-            oracle_data = OracleData(name=deployment.name, validation=validation_result)
+            oracle_data = OracleData(
+                name=deployment.name,
+                deployment=deployment,
+                validation=validation_result,
+            )
             result.append((source, oracle_data))
     return result
 
