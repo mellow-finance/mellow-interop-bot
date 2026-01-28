@@ -147,7 +147,7 @@ def run(
             execute(target_core.redeem(data[2]), 0, operator_pk)
         if data[1]:
             print_colored("TargetCore.claim({})".format(data[1].hex()))
-            execute(target_core.claim(data[1].hex()), 0, operator_pk)
+            execute(target_core.claim(data[1]), 0, operator_pk)
         if data[0] > 0:
             value = target_helper.quotePushToSource(target_core_address).call()
             print_colored(
@@ -191,7 +191,7 @@ def run(
 
     if data[1]:
         print_colored("TargetCore.claim({})".format(data[1].hex()))
-        execute(target_core.claim(data[1].hex()), 0, operator_pk)
+        execute(target_core.claim(data[1]), 0, operator_pk)
     if data[3] >= LAYER_ZERO_DUST:
         print_colored("TargetCore.deposit({})".format(data[3]))
         execute(target_core.deposit(data[3]), 0, operator_pk)
