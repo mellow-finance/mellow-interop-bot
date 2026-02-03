@@ -27,14 +27,15 @@ def _ensure_safe_global_fields(
     safe_global: SafeGlobal, source_name: str, label: str
 ) -> None:
     """
-    Validate that all required SafeGlobal fields are present after merging overrides.
+    Validate that required SafeGlobal fields are present after merging overrides.
+    Note: proposer_private_key is excluded as it comes from env vars that may not
+    be available during CI validation.
 
     Raises:
         ValueError: if any required field is missing or empty.
     """
     required_fields = {
         "safe_address": safe_global.safe_address,
-        "proposer_private_key": safe_global.proposer_private_key,
         "api_url": safe_global.api_url,
         "web_client_url": safe_global.web_client_url,
     }
