@@ -191,9 +191,9 @@ def validate_safe_client_gateway_api_url(
     version = None
     try:
         version = client_gateway_api.get_version(safe.api_url)
+        nonce = client_gateway_api.get_nonce(safe.api_url, chainId, safe.safe_address)
     except Exception as e:
         return False
-    nonce = client_gateway_api.get_nonce(safe.api_url, chainId, safe.safe_address)
     if contract_nonce != nonce:
         raise Exception(
             f"Safe contract nonce {contract_nonce} does not match the nonce from client gateway {nonce}"

@@ -1,5 +1,44 @@
+import time
 from dataclasses import dataclass
-from typing import List
+from typing import List, TypeVar, Callable
+
+T = TypeVar("T")
+
+
+def retry_with_backoff(
+    fn: Callable[[], T],
+    max_attempts: int = 5,
+    initial_delay: float = 1.0,
+    backoff_factor: float = 1.5,
+) -> T:
+    """
+    Retry a function with exponential backoff.
+
+    Args:
+        fn: Function to retry (should raise Exception on failure)
+        max_attempts: Maximum number of attempts (default: 5)
+        initial_delay: Initial delay in seconds (default: 1.0)
+        backoff_factor: Multiplier for delay after each attempt (default: 1.5)
+
+    Returns:
+        The result of the function if successful
+
+    Raises:
+        Exception: The last exception if all attempts fail
+    """
+    delay = initial_delay
+    last_exception = None
+
+    for attempt in range(max_attempts):
+        try:
+            return fn()
+        except Exception as e:
+            last_exception = e
+            if attempt < max_attempts - 1:
+                time.sleep(delay)
+                delay *= backoff_factor
+
+    raise last_exception
 
 
 @dataclass
