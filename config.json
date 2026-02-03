@@ -17,6 +17,14 @@
           "name": "CYC",
           "source-core": "0xc8e046fe778BE29572016d1f703e9B2ff77a207D",
           "target-core": "0xAdEcB7647C3370A40c9F06FB8F5F709c87324932"
+        },
+        {
+          "name": "SOLV",
+          "source-core": "0x01C56d641c7dCE4F43679a807DD3b69872Ce8e3C",
+          "target-core": "0x8545a1BaaDDdff45fBc316D80851214739189471",
+          "safe-global-overrides": {
+            "safe-address": "0x41d51CDA93f95cA4fe9e615f98032C6c18d50eF1"
+          }
         }
       ],
       "safe-global": {

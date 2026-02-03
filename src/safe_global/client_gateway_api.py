@@ -7,6 +7,7 @@ from safe_global.common import (
     PendingTransactionInfo,
     validate_confirmation_accounting,
     validate_transaction_id,
+    retry_with_backoff,
 )
 
 
@@ -23,12 +24,16 @@ def get_version(api_url: str) -> str:
 
 def get_nonce(api_url: str, chainId: int, safe_address: str) -> int:
     url = urljoin(api_url, f"/v1/chains/{chainId}/safes/{safe_address}/nonces")
-    response = requests.get(url, headers={"Accept": "application/json"})
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to get nonces: {response.status_code} - {response.text}"
-        )
-    return response.json()["currentNonce"]
+
+    def fetch_nonce():
+        response = requests.get(url, headers={"Accept": "application/json"})
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to get nonces: {response.status_code} - {response.text}"
+            )
+        return response.json()["currentNonce"]
+
+    return retry_with_backoff(fetch_nonce)
 
 
 def propose_safe_tx(api_url: str, safe_tx: SafeTx) -> str:
