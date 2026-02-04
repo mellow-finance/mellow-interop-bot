@@ -18,6 +18,7 @@ def run(
     target_core_helper: str,
     source_ratio_d3: int,
     max_source_ratio_d3: int,
+    force_withdrawal: bool = False,
 ) -> List[str]:
     oracle_validation_result = run_oracle_validation(
         source_core_address,
@@ -102,8 +103,28 @@ def run(
     )
 
     required_actions = []
-
-    if current_ratio_d3 < 0:
+    if force_withdrawal:
+        assets_deficit = target_value
+        assets_deficit = (assets_deficit // LAYER_ZERO_DUST + 1) * LAYER_ZERO_DUST
+        print("Assets deficit: {}.".format(assets_deficit))
+        data = target_helper.getAmounts(target_core_address, assets_deficit).call()
+        if data[2] > 0:
+            required_actions.append(
+                f"TargetCore({target_core.address}).redeem({data[2]})"
+            )
+        if data[1]:
+            required_actions.append(
+                f"TargetCore({target_core.address}).claim({data[1].hex()})"
+            )
+        if data[0] > 0:
+            value = target_helper.quotePushToSource(target_core_address).call()
+            required_actions.append(
+                f"TargetCore({target_core.address}).pushToSource{{value: {value}}}({data[0]})"
+            )
+            required_actions.append(
+                "Please, wait for LayerZero tx finalization (~5-10 minutes) and rerun script again..."
+            )
+    elif current_ratio_d3 < 0:
         assets_deficit = (
             (source_ratio_d3 - current_ratio_d3)
             * (source_value + target_value - withdrawal_demand)
@@ -176,6 +197,7 @@ if __name__ == "__main__":
 
     source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 50))
     max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 100))
+    force_withdrawal = int(os.getenv("FORCE_WITHDRAWAL", 0)) != 0
 
     # Build deployments from config
     deployments = []
@@ -213,6 +235,7 @@ if __name__ == "__main__":
                 target_core_helper=target_core_helper,
                 source_ratio_d3=source_ratio_d3,
                 max_source_ratio_d3=max_source_ratio_d3,
+                force_withdrawal=force_withdrawal,
             )
 
             if required_actions:

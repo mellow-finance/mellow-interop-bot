@@ -40,6 +40,7 @@ def run(
     operator_pk: str,
     source_ratio_d3: int,
     max_source_ratio_d3: int,
+    force_withdrawal: bool = False,
 ) -> None:
     oracle_validation_result = run_oracle_validation(
         source_core_address,
@@ -129,7 +130,33 @@ def run(
         )
     )
 
-    if current_ratio_d3 < 0:
+    if force_withdrawal:
+        assets_deficit = target_value
+        assets_deficit = (assets_deficit // LAYER_ZERO_DUST + 1) * LAYER_ZERO_DUST
+        print("Assets deficit: {}.".format(assets_deficit))
+        data = target_helper.getAmounts(target_core_address, assets_deficit).call()
+        if data[2] > 0:
+            print_colored("TargetCore.redeem({})".format(data[2]))
+            execute(target_core.redeem(data[2]), 0, operator_pk)
+        if data[1]:
+            print_colored("TargetCore.claim({})".format(data[1].hex()))
+            execute(target_core.claim(data[1]), 0, operator_pk)
+        if data[0] > 0:
+            value = target_helper.quotePushToSource(target_core_address).call()
+            print_colored(
+                "TargetCore.pushToSource{{value:{}}}({})".format(value, data[0])
+            )
+            execute(
+                target_core.pushToSource(data[0]),
+                value,
+                operator_pk,
+            )
+            print("Waiting for LayerZero finalization...")
+            wait_for_layer_zero_finalization(
+                source_helper, target_helper, source_core_address, target_core_address
+            )
+            print("LayerZero finalization completed.")
+    elif current_ratio_d3 < 0:
         assets_deficit = (
             (source_ratio_d3 - current_ratio_d3)
             * (source_value + target_value - withdrawal_demand)
@@ -270,6 +297,7 @@ if __name__ == "__main__":
     raw_deployments = os.getenv("DEPLOYMENTS")
     source_ratio_d3 = int(os.getenv("SOURCE_RATIO_D3", 50))
     max_source_ratio_d3 = int(os.getenv("MAX_SOURCE_RATIO_D3", 100))
+    force_withdrawal = int(os.getenv("FORCE_WITHDRAWAL", 0)) != 0
 
     # Parse deployments
     deployments = parse_deployments(config, raw_deployments)
@@ -332,4 +360,5 @@ if __name__ == "__main__":
             operator_pk=operator_pk,
             source_ratio_d3=source_ratio_d3,
             max_source_ratio_d3=max_source_ratio_d3,
+            force_withdrawal=force_withdrawal,
         )
