@@ -5,6 +5,7 @@ from safe_global.common import (
     PendingTransactionInfo,
     validate_confirmation_accounting,
     validate_transaction_id,
+    retry_with_backoff,
 )
 
 
@@ -44,12 +45,16 @@ def propose_safe_tx(api_url: str, api_key: str, safe_tx: SafeTx) -> str:
         "sender": safe_tx.signers[0],
         "signature": "0x" + safe_tx.signatures.hex(),
     }
-    response = requests.post(url, headers=headers, json=body)
-    if response.status_code != 201:
-        raise Exception(
-            f"Failed to propose safe tx: {response.status_code} - {response.text}"
-        )
-    return body["contractTransactionHash"]
+
+    def propose():
+        response = requests.post(url, headers=headers, json=body, timeout=15)
+        if response.status_code != 201:
+            raise Exception(
+                f"Failed to propose safe tx: {response.status_code} - {response.text}"
+            )
+        return body["contractTransactionHash"]
+
+    return retry_with_backoff(propose, max_attempts=3, backoff_factor=2.0)
 
 
 def _get_queued_transactions(
@@ -65,12 +70,16 @@ def _get_queued_transactions(
         "Accept": "application/json",
         "Authorization": f"Bearer {api_key}",
     }
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to get queued transactions: {response.status_code} - {response.text}"
-        )
-    return response.json()["results"]
+
+    def fetch():
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to get queued transactions: {response.status_code} - {response.text}"
+            )
+        return response.json()["results"]
+
+    return retry_with_backoff(fetch, max_attempts=5, backoff_factor=2.0)
 
 
 def _get_queued_transaction_by_calldata(
@@ -107,27 +116,31 @@ def _get_owners_and_threshold(
     """
     url = f"{api_url.rstrip('/')}/api/v1/safes/{safe_address}"
     headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to get Safe info: {response.status_code} - {response.text}"
-        )
 
-    data = response.json()
+    def fetch():
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to get Safe info: {response.status_code} - {response.text}"
+            )
 
-    threshold = data.get("threshold")
-    owners = data.get("owners", [])
+        data = response.json()
 
-    if threshold is None:
-        raise Exception(f"Missing 'threshold' field in API response: {data}")
+        threshold = data.get("threshold")
+        owners = data.get("owners", [])
 
-    if not isinstance(owners, list):
-        raise Exception(f"'owners' field must be a list in API response: {data}")
+        if threshold is None:
+            raise Exception(f"Missing 'threshold' field in API response: {data}")
 
-    if len(owners) == 0:
-        raise Exception(f"No owners found in API response: {data}")
+        if not isinstance(owners, list):
+            raise Exception(f"'owners' field must be a list in API response: {data}")
 
-    return ThresholdWithOwners(threshold=threshold, owners=owners)
+        if len(owners) == 0:
+            raise Exception(f"No owners found in API response: {data}")
+
+        return ThresholdWithOwners(threshold=threshold, owners=owners)
+
+    return retry_with_backoff(fetch, max_attempts=5, backoff_factor=2.0)
 
 
 def get_queued_transaction(
