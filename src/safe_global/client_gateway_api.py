@@ -58,13 +58,17 @@ def propose_safe_tx(api_url: str, safe_tx: SafeTx) -> str:
         "signature": "0x" + safe_tx.signatures.hex(),
         "origin": '{"url":"https://safe.mainnet.frax.com/tx-builder/","name":"Transaction Builder"}',
     }
-    response = requests.post(url, headers=headers, json=body)
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to propose safe tx: {response.status_code} - {response.text}"
-        )
 
-    response_data = response.json()
+    def propose():
+        response = requests.post(url, headers=headers, json=body, timeout=15)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to propose safe tx: {response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    response_data = retry_with_backoff(propose, max_attempts=3, backoff_factor=2.0)
+
     safe_tx_hash = response_data.get("detailedExecutionInfo", {}).get("safeTxHash")
     if not safe_tx_hash:
         safe_tx_hash = response_data.get("txId").split("_")[-1]
@@ -87,13 +91,17 @@ def _get_queued_transactions(api_url: str, chainId: int, safe_address: str):
         api_url,
         f"/v1/chains/{chainId}/safes/{safe_address}/transactions/queued?trusted=true",
     )
-    response = requests.get(url, headers={"Accept": "application/json"})
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to get queued transactions: {response.status_code} - {response.text}"
-        )
-    results = response.json()["results"]
-    return [result for result in results if result.get("type") == "TRANSACTION"]
+
+    def fetch():
+        response = requests.get(url, headers={"Accept": "application/json"}, timeout=10)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to get queued transactions: {response.status_code} - {response.text}"
+            )
+        results = response.json()["results"]
+        return [result for result in results if result.get("type") == "TRANSACTION"]
+
+    return retry_with_backoff(fetch, max_attempts=5, backoff_factor=2.0)
 
 
 def _build_safe_tx_hash(
@@ -189,39 +197,42 @@ def _get_owners_and_threshold(
     url = urljoin(api_url, f"/v1/chains/{chain_id}/safes/{safe_address}")
     headers = {"Accept": "application/json"}
 
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to get Safe info: {response.status_code} - {response.text}"
-        )
+    def fetch():
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to get Safe info: {response.status_code} - {response.text}"
+            )
 
-    data = response.json()
+        data = response.json()
 
-    threshold = data.get("threshold")
-    owners_data = data.get("owners", [])
+        threshold = data.get("threshold")
+        owners_data = data.get("owners", [])
 
-    if threshold is None:
-        raise Exception(f"Missing 'threshold' field in API response: {data}")
+        if threshold is None:
+            raise Exception(f"Missing 'threshold' field in API response: {data}")
 
-    if not isinstance(owners_data, list):
-        raise Exception(f"'owners' field must be a list in API response: {data}")
+        if not isinstance(owners_data, list):
+            raise Exception(f"'owners' field must be a list in API response: {data}")
 
-    if len(owners_data) == 0:
-        raise Exception(f"No owners found in API response: {data}")
+        if len(owners_data) == 0:
+            raise Exception(f"No owners found in API response: {data}")
 
-    # Extract owner addresses from the owner objects
-    owners = []
-    for owner in owners_data:
-        if not isinstance(owner, dict):
-            raise Exception(f"Owner must be an object: {owner}")
+        # Extract owner addresses from the owner objects
+        owners = []
+        for owner in owners_data:
+            if not isinstance(owner, dict):
+                raise Exception(f"Owner must be an object: {owner}")
 
-        owner_address = owner.get("value")
-        if not owner_address:
-            raise Exception(f"Missing 'value' field in owner object: {owner}")
+            owner_address = owner.get("value")
+            if not owner_address:
+                raise Exception(f"Missing 'value' field in owner object: {owner}")
 
-        owners.append(owner_address)
+            owners.append(owner_address)
 
-    return ThresholdWithOwners(threshold=threshold, owners=owners)
+        return ThresholdWithOwners(threshold=threshold, owners=owners)
+
+    return retry_with_backoff(fetch, max_attempts=5, backoff_factor=2.0)
 
 
 def get_queued_transaction(
