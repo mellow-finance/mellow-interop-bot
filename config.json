@@ -70,8 +70,9 @@
       "safe-global": {
         "safe-address": "0x62339BF5c4EB32EFAC9482F0277D68957A822641",
         "proposer-private-key": "${LISK_SAFE_PROPOSER_PK:${SAFE_PROPOSER_PK}}",
-        "api-url": "https://gateway.safe.optimism.io",
-        "web-client-url": "https://safe.optimism.io"
+        "api-url": "https://transaction-lisk.safe.protofire.io",
+        "web-client-url": "https://app.safe.protofire.io",
+        "eip-3770": "lisk"
       }
     }
   ]

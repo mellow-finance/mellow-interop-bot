@@ -203,9 +203,6 @@ def validate_safe_client_gateway_api_url(
 
 
 def validate_safe_transaction_api_url(safe: SafeGlobal):
-    if not safe.api_key:
-        print("No API key for safe transaction API is set, skipping validation...")
-        return True
     try:
         version = transaction_api.get_version(safe.api_url, safe.api_key)
     except Exception:

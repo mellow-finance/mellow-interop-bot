@@ -9,9 +9,18 @@ from safe_global.common import (
 )
 
 
+def _headers(api_key: str, extra: dict = None) -> dict:
+    headers = {"Accept": "application/json"}
+    if extra:
+        headers.update(extra)
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    return headers
+
+
 def get_version(api_url: str, api_key: str) -> str:
-    url = f"{api_url.rstrip('/')}/api/v1/about"
-    headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
+    url = f"{api_url.rstrip('/')}/api/v1/about/"
+    headers = _headers(api_key)
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         raise Exception(
@@ -24,12 +33,8 @@ def get_version(api_url: str, api_key: str) -> str:
 
 
 def propose_safe_tx(api_url: str, api_key: str, safe_tx: SafeTx) -> str:
-    url = f"{api_url.rstrip('/')}/api/v2/safes/{safe_tx.safe_address}/multisig-transactions"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
+    url = f"{api_url.rstrip('/')}/api/v2/safes/{safe_tx.safe_address}/multisig-transactions/"
+    headers = _headers(api_key, {"Content-Type": "application/json"})
     body = {
         "to": str(safe_tx.to),
         "value": str(safe_tx.value),
@@ -47,7 +52,12 @@ def propose_safe_tx(api_url: str, api_key: str, safe_tx: SafeTx) -> str:
     }
 
     def propose():
-        response = requests.post(url, headers=headers, json=body, timeout=15)
+        # allow_redirects=False so a server-side redirect (e.g. Django APPEND_SLASH
+        # on self-hosted instances) can never silently downgrade this POST into a
+        # bodyless GET and drop the signed transaction.
+        response = requests.post(
+            url, headers=headers, json=body, timeout=15, allow_redirects=False
+        )
         if response.status_code != 201:
             raise Exception(
                 f"Failed to propose safe tx: {response.status_code} - {response.text}"
@@ -64,12 +74,8 @@ def _get_queued_transactions(
     safe_nonce: int,
     to: str,
 ):
-    url = f"{api_url.rstrip('/')}/api/v2/safes/{safe_address}/multisig-transactions?nonce__gte={safe_nonce}&to={to}&executed=false&trusted=true"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
+    url = f"{api_url.rstrip('/')}/api/v2/safes/{safe_address}/multisig-transactions/?nonce__gte={safe_nonce}&to={to}&executed=false&trusted=true"
+    headers = _headers(api_key, {"Content-Type": "application/json"})
 
     def fetch():
         response = requests.get(url, headers=headers, timeout=10)
@@ -114,8 +120,8 @@ def _get_owners_and_threshold(
     """
     Get Safe owners and threshold information.
     """
-    url = f"{api_url.rstrip('/')}/api/v1/safes/{safe_address}"
-    headers = {"Accept": "application/json", "Authorization": f"Bearer {api_key}"}
+    url = f"{api_url.rstrip('/')}/api/v1/safes/{safe_address}/"
+    headers = _headers(api_key)
 
     def fetch():
         response = requests.get(url, headers=headers, timeout=10)
