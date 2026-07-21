@@ -18,8 +18,17 @@ def mask_sensitive_data(message: str, sensitive_value: str) -> str:
 
 
 def mask_url_credentials(message: str, url: str) -> str:
-    """Mask credentials in URLs (API keys in query params or auth)"""
+    """Mask credentials in URLs (API keys in query params or auth).
+
+    Supports comma-separated RPC values (multiple endpoints), masking each
+    endpoint independently so a single leaked URL still gets matched.
+    """
     if not url:
+        return message
+
+    if "," in url:
+        for single_url in url.split(","):
+            message = mask_url_credentials(message, single_url.strip())
         return message
 
     # Check if URL contains credentials, API keys, or paths (RPC URLs often have sensitive paths)

@@ -1,12 +1,18 @@
 import json
+import time
 from web3 import Web3
 from web3.contract import Contract
+from web3.providers.rpc import HTTPProvider
 from eth_account import Account
 from web3.middleware import ExtraDataToPOAMiddleware
 
 
 BLOCK_GAP = 10000
 SECURE_INTERVAL = 5 * 60  # 5 minutes
+
+RETRY_ATTEMPTS_PER_ENDPOINT = 3
+RETRY_DELAY_SECONDS = 0.25
+RETRY_BACKOFF_MULTIPLIER = 2
 
 
 def add_color(text: str, color="yellow") -> str:
@@ -23,8 +29,68 @@ def print_colored(text: str, color="yellow") -> str:
     print(add_color(text, color))
 
 
+class FallbackHTTPProvider(HTTPProvider):
+    """HTTPProvider that fails over across multiple endpoints per request.
+
+    Each endpoint is attempted ``attempts_per_endpoint`` times before moving on
+    to the next one. Between retries of the SAME endpoint the delay starts at
+    ``retry_delay_seconds`` and is multiplied by ``backoff_multiplier`` after
+    each wait; the backoff resets when failing over to the next endpoint, which
+    happens immediately (no delay on switch). For two endpoints with the
+    defaults (3 attempts, 0.25s, x2) the schedule is:
+    try 0 -> 0.25s -> try 0 -> 0.5s -> try 0 -> try 1 -> 0.25s -> try 1 -> 0.5s -> try 1.
+    """
+
+    def __init__(
+        self,
+        endpoint_uris,
+        attempts_per_endpoint=RETRY_ATTEMPTS_PER_ENDPOINT,
+        retry_delay_seconds=RETRY_DELAY_SECONDS,
+        backoff_multiplier=RETRY_BACKOFF_MULTIPLIER,
+        **kwargs,
+    ):
+        uris = [uri.strip() for uri in endpoint_uris if uri and uri.strip()]
+        if not uris:
+            raise ValueError("FallbackHTTPProvider requires at least one endpoint")
+        self._attempts_per_endpoint = attempts_per_endpoint
+        self._retry_delay_seconds = retry_delay_seconds
+        self._backoff_multiplier = backoff_multiplier
+        # Disable web3's built-in per-request retry so this class fully controls
+        # the attempt/backoff schedule below.
+        kwargs.setdefault("exception_retry_configuration", None)
+        super().__init__(uris[0], **kwargs)
+        self._providers = [HTTPProvider(uri, **kwargs) for uri in uris]
+
+    def make_request(self, method, params):
+        last_error = None
+        for provider in self._providers:
+            delay = self._retry_delay_seconds
+            for attempt in range(self._attempts_per_endpoint):
+                if attempt > 0:
+                    time.sleep(delay)
+                    delay *= self._backoff_multiplier
+                try:
+                    response = provider.make_request(method, params)
+                    self.endpoint_uri = provider.endpoint_uri
+                    return response
+                except Exception as e:
+                    last_error = e
+        raise ConnectionError(
+            f"All {len(self._providers)} RPC endpoint(s) failed for method {method} "
+            f"after {self._attempts_per_endpoint} attempt(s) each"
+        ) from last_error
+
+
 def get_w3(rpc: str) -> Web3:
-    w3 = Web3(Web3.HTTPProvider(rpc))
+    endpoints = [uri.strip() for uri in rpc.split(",") if uri.strip()]
+    if not endpoints:
+        raise ValueError("No RPC endpoint provided")
+    provider = (
+        Web3.HTTPProvider(endpoints[0])
+        if len(endpoints) == 1
+        else FallbackHTTPProvider(endpoints)
+    )
+    w3 = Web3(provider)
     w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     return w3
 

@@ -150,12 +150,20 @@ def format_remaining_time(remaining_time: int) -> str:
 def _sanitize_error_message(error_msg: str, source_rpc: str, target_rpc: str) -> str:
     """
     Replace sensitive RPC URLs in error messages with placeholder text.
+
+    RPC values may be comma-separated (multiple endpoints for failover), while a
+    real error usually mentions only the single endpoint that failed, so each
+    endpoint is matched independently.
     """
     sanitized_msg = error_msg
-    if source_rpc in sanitized_msg:
-        sanitized_msg = sanitized_msg.replace(source_rpc, "[SOURCE_RPC_MASKED]")
-    if target_rpc in sanitized_msg:
-        sanitized_msg = sanitized_msg.replace(target_rpc, "[TARGET_RPC_MASKED]")
+    for endpoint in source_rpc.split(","):
+        endpoint = endpoint.strip()
+        if endpoint and endpoint in sanitized_msg:
+            sanitized_msg = sanitized_msg.replace(endpoint, "[SOURCE_RPC_MASKED]")
+    for endpoint in target_rpc.split(","):
+        endpoint = endpoint.strip()
+        if endpoint and endpoint in sanitized_msg:
+            sanitized_msg = sanitized_msg.replace(endpoint, "[TARGET_RPC_MASKED]")
     return sanitized_msg
 
 

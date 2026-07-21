@@ -111,6 +111,36 @@ class TestMaskUrlCredentials(unittest.TestCase):
         # Should remain unchanged
         self.assertEqual(message, result)
 
+    def test_mask_comma_separated_masks_single_leaked_endpoint(self):
+        """A real error contains only ONE of several configured endpoints; it must still be masked."""
+        configured = (
+            "https://primary.example.com/v3/KEY1," "https://backup.example.com/v3/KEY2"
+        )
+        # Transport error mentions only the endpoint that actually failed.
+        message = "Failed to connect to https://backup.example.com/v3/KEY2"
+
+        result = mask_url_credentials(message, configured)
+
+        self.assertNotIn("KEY2", result)
+        self.assertIn("https://backup.example.com/***", result)
+
+    def test_mask_comma_separated_masks_all_endpoints(self):
+        """When several endpoints appear in one message, each is masked independently."""
+        configured = (
+            "https://primary.example.com/v3/KEY1, " "https://backup.example.com/v3/KEY2"
+        )
+        message = (
+            "Tried https://primary.example.com/v3/KEY1 then "
+            "https://backup.example.com/v3/KEY2"
+        )
+
+        result = mask_url_credentials(message, configured)
+
+        self.assertNotIn("KEY1", result)
+        self.assertNotIn("KEY2", result)
+        self.assertIn("https://primary.example.com/***", result)
+        self.assertIn("https://backup.example.com/***", result)
+
 
 class TestMaskSourceSensitiveData(unittest.TestCase):
 

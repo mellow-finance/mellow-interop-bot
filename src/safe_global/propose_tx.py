@@ -18,15 +18,20 @@ def _create_calldata(contract_name: str, method: str, args: list) -> str:
 
 
 def _create_signed_safe_tx(
-    rpc_url: str,
     safe_address: str,
     private_key: str,
     to: str,
     calldata: str,
     operation: int,
+    chain_id: int,
+    safe_version: str,
+    safe_nonce: int,
 ) -> SafeTx:
+    # chain_id, safe_version and safe_nonce are supplied explicitly so signing is
+    # fully offline: SafeTx never has to reach a node (which would bypass the
+    # fallback RPC handling in get_w3 and break on comma-separated RPC strings).
     safe_tx = SafeTx(
-        ethereum_client=EthereumClient(rpc_url),
+        ethereum_client=EthereumClient(),
         safe_address=safe_address,
         to=to,
         value=0,
@@ -37,6 +42,9 @@ def _create_signed_safe_tx(
         gas_price=0,
         gas_token=None,
         refund_receiver=None,
+        chain_id=chain_id,
+        safe_nonce=safe_nonce,
+        safe_version=safe_version,
     )
     safe_tx.sign(private_key)
     return safe_tx
@@ -45,13 +53,20 @@ def _create_signed_safe_tx(
 def _create_signed_safe_tx_for_safe(
     rpc: str, safe_global: SafeGlobal, to: str, calldata: str, operation: int
 ) -> SafeTx:
+    w3 = get_w3(rpc)
+    safe_contract = get_contract(w3, address=safe_global.safe_address, name="Safe")
+    chain_id = w3.eth.chain_id
+    safe_version = safe_contract.functions.VERSION().call()
+    safe_nonce = safe_contract.functions.nonce().call()
     safe_tx = _create_signed_safe_tx(
-        rpc,
         safe_global.safe_address,
         safe_global.proposer_private_key,
         to,
         calldata,
         operation,
+        chain_id,
+        safe_version,
+        safe_nonce,
     )
     return safe_tx
 
