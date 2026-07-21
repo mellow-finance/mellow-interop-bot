@@ -105,6 +105,7 @@ class TestFallbackHTTPProvider(unittest.TestCase):
         base = self.base
         calls = []
         delays = []
+        logs = []
 
         class Recorder:
             def __init__(self, uri, succeed_on=None):
@@ -126,11 +127,14 @@ class TestFallbackHTTPProvider(unittest.TestCase):
         provider._providers = [first, second]
 
         original_sleep = base.time.sleep
+        original_print = base.print_colored
         base.time.sleep = lambda seconds: delays.append(seconds)
+        base.print_colored = lambda message, *args, **kwargs: logs.append(message)
         try:
             result = provider.make_request("eth_blockNumber", [])
         finally:
             base.time.sleep = original_sleep
+            base.print_colored = original_print
 
         self.assertEqual(result, {"result": "https://b"})
         # try 0 x3 (backoff within endpoint), then immediate failover to try 1.
@@ -138,6 +142,15 @@ class TestFallbackHTTPProvider(unittest.TestCase):
         # Backoff applies only within endpoint a (0.25 -> 0.5); the switch to b
         # is immediate, and b succeeds on its first attempt (no wait).
         self.assertEqual(delays, [0.25, 0.5])
+        # Every attempt except the very first logs the RPC index and attempt no.
+        self.assertEqual(
+            logs,
+            [
+                "Retrying with RPC #0, attempt 2...",
+                "Retrying with RPC #0, attempt 3...",
+                "Retrying with RPC #1, attempt 1...",
+            ],
+        )
 
 
 if __name__ == "__main__":

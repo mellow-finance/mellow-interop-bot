@@ -63,12 +63,19 @@ class FallbackHTTPProvider(HTTPProvider):
 
     def make_request(self, method, params):
         last_error = None
-        for provider in self._providers:
+        for index, provider in enumerate(self._providers):
             delay = self._retry_delay_seconds
             for attempt in range(self._attempts_per_endpoint):
                 if attempt > 0:
                     time.sleep(delay)
                     delay *= self._backoff_multiplier
+                # Log every attempt except the very first (RPC index only, never
+                # the URL, which may contain an API key).
+                if index > 0 or attempt > 0:
+                    print_colored(
+                        f"Retrying with RPC #{index}, attempt {attempt + 1}...",
+                        "yellow",
+                    )
                 try:
                     response = provider.make_request(method, params)
                     self.endpoint_uri = provider.endpoint_uri
